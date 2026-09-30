@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDS-APP Clickable Prototype (EN UI)</title>
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--txt:#1a1d23;--sub:#6b7280;--line:#e5e7eb;--pri:#1e63e9;--pri-l:#e8f0fe;--ok:#16a34a;--ok-l:#e7f7ec;--warn:#d97706;--warn-l:#fff4e0;--err:#dc2626;--err-l:#fde8e8;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:#d9dde3;color:var(--txt);display:flex;justify-content:center;align-items:flex-start;gap:32px;padding:24px;min-height:100vh}
+.side{width:260px;background:#fff;border-radius:12px;padding:16px;font-size:13px;color:var(--sub);line-height:1.6}
+.side h3{color:var(--txt);margin-bottom:8px;font-size:15px}
+.side a{display:block;color:var(--pri);text-decoration:none;padding:3px 0;cursor:pointer}
+.side a:hover{text-decoration:underline}
+.phone{width:390px;height:844px;background:#000;border-radius:44px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);flex-shrink:0}
+.screen{width:100%;height:100%;background:var(--bg);border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:14px;font-weight:600;background:var(--card)}
+.appbar{height:52px;background:var(--card);display:flex;align-items:center;padding:0 16px;font-size:18px;font-weight:600;border-bottom:1px solid var(--line);gap:12px}
+.appbar .back{font-size:22px;cursor:pointer;color:var(--pri)}
+.appbar .act{margin-left:auto;font-size:14px;font-weight:500;color:var(--pri);cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:12px 14px 90px}
+.content::-webkit-scrollbar{width:0}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:74px;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:14px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--sub);cursor:pointer;gap:3px}
+.tab .ic{font-size:20px}
+.tab.on{color:var(--pri)}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h4{font-size:13px;color:var(--sub);font-weight:500;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1}
+.t1{font-size:16px;font-weight:600}
+.t2{font-size:13px;color:var(--sub);margin-top:2px}
+.pill{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.pill.ok{background:var(--ok-l);color:var(--ok)}.pill.warn{background:var(--warn-l);color:var(--warn)}.pill.err{background:var(--err-l);color:var(--err)}.pill.pri{background:var(--pri-l);color:var(--pri)}.pill.gray{background:#eef0f3;color:var(--sub)}
+.btn{display:block;width:100%;padding:14px;border-radius:12px;border:0;font-size:16px;font-weight:600;cursor:pointer;text-align:center}
+.btn.pri{background:var(--pri);color:#fff}.btn.ghost{background:#fff;color:var(--pri);border:1.5px solid var(--pri)}.btn.dis{background:#c7cdd6;color:#fff}.btn.err{background:var(--err);color:#fff}.btn.sm{padding:9px;font-size:14px;border-radius:9px}
+.fixed-bottom{position:absolute;bottom:0;left:0;right:0;padding:12px 14px 28px;background:linear-gradient(transparent,var(--bg) 30%)}
+.list-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border-bottom:1px solid var(--line);cursor:pointer}
+.list-item:first-child{border-radius:12px 12px 0 0}.list-item:last-child{border-radius:0 0 12px 12px;border-bottom:0}
+.list-item.single{border-radius:12px}
+.sig{display:flex;align-items:flex-end;gap:2px;height:16px}
+.sig i{width:4px;background:#cbd2dc;border-radius:1px}
+.sig i:nth-child(1){height:5px}.sig i:nth-child(2){height:8px}.sig i:nth-child(3){height:11px}.sig i:nth-child(4){height:14px}
+.sig.s4 i{background:var(--ok)}.sig.s3 i:nth-child(-n+3){background:var(--ok)}.sig.s2 i:nth-child(-n+2){background:var(--warn)}.sig.s1 i:nth-child(1){background:var(--err)}
+.input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fafbfc;margin-top:6px}
+label.lb{font-size:12px;color:var(--sub);display:block;margin-top:12px}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:10}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%}
+.modal h3{font-size:17px;margin-bottom:4px}
+.steps{position:relative}
+.step{display:flex;gap:12px;padding:9px 0;position:relative}
+.step .dot{width:22px;height:22px;border-radius:50%;background:#e5e7eb;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.step:not(:last-child) .dot::after{content:"";position:absolute;left:10px;top:24px;width:2px;height:calc(100% - 10px);background:#e5e7eb}
+.step.done .dot{background:var(--ok)}.step.run .dot{background:var(--pri);box-shadow:0 0 0 4px var(--pri-l)}.step.fail .dot{background:var(--err)}.step.skip .dot{background:#cbd2dc}
+.step .nm{font-size:14px;font-weight:500}.step .ds{font-size:12px;color:var(--sub);margin-top:2px}
+.step .tm{margin-left:auto;font-size:12px;color:var(--sub);white-space:nowrap}
+.step.run .nm{color:var(--pri)}.step.fail .nm{color:var(--err)}
+.prog{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-top:6px}
+.prog b{display:block;height:100%;background:var(--pri);border-radius:3px}
+.big{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.arrow{font-size:22px;color:var(--sub);padding:0 8px}
+.result-hero{text-align:center;padding:40px 16px 20px}
+.result-hero .ico{width:84px;height:84px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:44px;color:#fff}
+.result-hero h2{font-size:22px;margin-bottom:6px}
+.result-hero p{color:var(--sub);font-size:14px}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border:0}.kv span:first-child{color:var(--sub)}
+.filter{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto}
+.chip{font-size:12px;padding:6px 12px;border-radius:16px;background:#fff;border:1px solid var(--line);white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radius:8px;margin-top:8px;white-space:pre-wrap;font-family:Menlo,Consolas,monospace;line-height:1.5}
+.group-title{font-size:12px;color:var(--sub);margin:14px 4px 6px;font-weight:600;letter-spacing:.5px}
+.cfg{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#fff;border-bottom:1px solid var(--line);font-size:14px}
+.cfg:first-child{border-radius:12px 12px 0 0}.cfg:last-child{border-radius:0 0 12px 12px;border-bottom:0}
+.cfg .v{color:var(--sub);font-size:13px;font-family:Menlo,monospace;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast{position:absolute;left:50%;transform:translateX(-50%);bottom:110px;background:#111827;color:#fff;font-size:13px;padding:10px 16px;border-radius:20px;z-index:20;display:none}
+.sc{display:none;height:100%;flex-direction:column}
+.sc.on{display:flex}
+.hint{background:var(--warn-l);color:var(--warn);font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat div{background:#fff;border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}.stat span{font-size:11px;color:var(--sub)}
+</style>
+</head>
+<body>
+
+<div class="side">
+  <h3>PDS-APP 原型导航 / Prototype Nav</h3>
+  <p style="margin-bottom:8px">手机框内可直接点击操作，也可通过下方链接跳转到指定页面。界面文案为英文（PRD 6.7）。</p>
+  <a onclick="go('devices')">01 设备扫描列表</a>
+  <a onclick="go('devices');openModal()">02 连接确认</a>
+  <a onclick="go('detail')">03 设备详情 / 升级确认</a>
+  <a onclick="go('packages')">04 程序包列表</a>
+  <a onclick="go('download')">05 URL 下载</a>
+  <a onclick="go('upgrading')">06 升级进行中</a>
+  <a onclick="go('success')">07 升级成功</a>
+  <a onclick="go('failed')">08 升级失败（已回滚）</a>
+  <a onclick="go('logs')">09 日志列表</a>
+  <a onclick="go('logdetail')">10 日志详情</a>
+  <a onclick="go('settings')">11 设置</a>
+  <p style="margin-top:14px;font-size:12px">URL 参数 <code>?screen=upgrading</code> 可直接打开某页（用于截图）。</p>
+</div>
+
+<div class="phone"><div class="screen" id="screen">
+<div class="toast" id="toast"></div>
+
+<!-- 01 设备列表 -->
+<div class="sc" id="sc-devices">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Devices <span class="act" onclick="toast('Scanning… (Android allows 4 scans per 2 min)')">↻ Refresh</span></div>
+  <div class="content">
+    <div class="card row" onclick="go('packages')">
+      <div class="grow"><h4>Current Package</h4><div class="t1">pds_app_v1.3.0.zip</div><div class="t2">v1.3.0 · 86.4 MB · Verified ✓</div></div>
+      <span class="pill ok">Ready</span>
+    </div>
+    <div class="card row" onclick="go('detail')">
+      <div class="grow"><h4>Current Device</h4><div class="t1">PDS-0231</div><div class="t2">192.168.4.1 · v1.2.3 · Running</div></div>
+      <span class="pill pri">Connected</span>
+    </div>
+    <div class="group-title">NEARBY VEHICLES (4) · Last scan 12s ago</div>
+    <div>
+      <div class="list-item" onclick="go('detail')"><div class="sig s4"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0231</div><div class="t2">Last upgrade v1.2.3 · 09-28 14:02 · Success</div></div><span class="pill pri">Connected</span></div>
+      <div class="list-item" onclick="openModal('PDS-0187')"><div class="sig s3"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0187</div><div class="t2">Last upgrade v1.2.3 · 09-28 14:20 · Success</div></div><span class="pill gray">-62 dBm</span></div>
+      <div class="list-item" onclick="openModal('PDS-0305')"><div class="sig s2"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0305</div><div class="t2">Last upgrade v1.1.0 · 08-15 · <span style="color:var(--err)">Failed (rolled back)</span></div></div><span class="pill gray">-74 dBm</span></div>
+      <div class="list-item" onclick="openModal('PDS-0412')"><div class="sig s1"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0412</div><div class="t2">No upgrade history</div></div><span class="pill gray">-85 dBm</span></div>
+    </div>
+    <div class="t2" style="text-align:center;margin-top:14px">Vehicle not listed? Move within 10 m and make sure the device is powered on</div>
+    <div style="text-align:center;margin-top:8px"><span class="chip" onclick="toast('Enter SSID manually')">Enter SSID Manually</span></div>
+  </div>
+  <div class="tabbar" id="tabbar-devices"></div>
+  <div class="modal-bg" id="modal" style="display:none" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Connect to Device</h3><div class="t2">PDS-0231 will be disconnected. Connect to <b id="modal-ssid">PDS-0187</b></div>
+      <label class="lb">Wi-Fi name (SSID)</label><input class="input" id="modal-ssid-input" value="PDS-0187" readonly>
+      <label class="lb">Wi-Fi password (pre-filled)</label><input class="input" type="password" value="pds12345678">
+      <div class="hint" style="margin-top:12px">Android will show a system prompt — tap “Connect”. This Wi-Fi has no internet; it is used only by this app to talk to the device.</div>
+      <button class="btn pri" onclick="closeModal();go('detail');toast('Connected to PDS-0187, probing device…')">Connect</button>
+      <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- 03 设备详情 / 升级确认 -->
+<div class="sc" id="sc-detail">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar"><span class="back" onclick="go('devices')">‹</span>Device Details <span class="act" onclick="toast('Disconnected')">Disconnect</span></div>
+  <div class="content">
+    <div class="card">
+      <div class="row"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">192.168.4.1:22 · SSH logged in · Signal -48 dBm</div></div><span class="pill ok">Device Ready</span></div>
+      <div style="margin-top:12px">
+        <div class="kv"><span>Current version</span><span>v1.2.3</span></div>
+        <div class="kv"><span>Service status</span><span style="color:var(--ok)">Running (active)</span></div>
+        <div class="kv"><span>Target directory</span><span>/opt/pds/app</span></div>
+        <div class="kv"><span>Free space</span><span>1.8 GB</span></div>
+        <div class="kv"><span>System</span><span>Linux 5.10 armv7l</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Upgrade Plan</h4>
+      <div class="row" style="justify-content:center;padding:10px 0">
+        <div style="text-align:center"><div class="t2">Current</div><div class="big">v1.2.3</div></div>
+        <div class="arrow">→</div>
+        <div style="text-align:center"><div class="t2">Target</div><div class="big" style="color:var(--pri)">v1.3.0</div></div>
+      </div>
+      <div class="kv"><span>Package</span><span>pds_app_v1.3.0.zip</span></div>
+      <div class="kv"><span>Size / SHA-256</span><span>86.4 MB · 3f9a…c21e ✓</span></div>
+      <div class="kv"><span>Estimated time</span><span>~2 min</span></div>
+      <div class="kv"><span>Release notes</span><span>Fix false collision alerts</span></div>
+      <div style="margin-top:10px"><span class="chip" onclick="go('packages')">Change Package</span></div>
+    </div>
+    <div class="hint">Stay near the vehicle and keep the app open. If the upgrade fails, the previous version is restored automatically.</div>
+  </div>
+  <div class="fixed-bottom"><button class="btn pri" onclick="go('upgrading')">Start Upgrade</button></div>
+</div>
+
+<!-- 04 程序包 -->
+<div class="sc" id="sc-packages">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Packages <span class="act" onclick="toast('Cache: 312 MB used / 2 GB limit')">Clear Cache</span></div>
+  <div class="content">
+    <div class="row" style="gap:8px;margin-bottom:12px">
+      <button class="btn pri sm" onclick="go('download')">⬇ Download from URL</button>
+      <button class="btn ghost sm" onclick="toast('Opens the system file picker (SAF)')">📁 Local File</button>
+    </div>
+    <div class="group-title">LOCAL PACKAGES (3)</div>
+    <div>
+      <div class="list-item" onclick="toast('Set as current package')"><div class="grow"><div class="t1">pds_app_v1.3.0.zip</div><div class="t2">v1.3.0 · 86.4 MB · URL · 09-30 08:12 · manifest ✓</div></div><span class="pill pri">Current</span></div>
+      <div class="list-item" onclick="toast('Set as current package')"><div class="grow"><div class="t1">pds_app_v1.2.3.bin</div><div class="t2">v1.2.3 · 41.2 MB · Local · 09-20</div></div><span class="pill ok">Ready</span></div>
+      <div class="list-item" onclick="toast('Invalid: file is 3 KB — looks like an error page was downloaded')"><div class="grow"><div class="t1">download.html</div><div class="t2">3 KB · URL · 09-29</div></div><span class="pill err">Invalid</span></div>
+    </div>
+    <div class="group-title">VALIDATION RULES</div>
+    <div class="card" style="font-size:12px;color:var(--sub);line-height:1.7">① Format: bin / zip / tar.gz　② Size: 1 MB – 2 GB<br>③ zip extractable, no path traversal　④ manifest.json + inner SHA-256<br>⑤ Whole-file SHA-256 (if provided)</div>
+  </div>
+  <div class="tabbar" id="tabbar-packages"></div>
+</div>
+
+<!-- 05 下载 -->
+<div class="sc" id="sc-download">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar"><span class="back" onclick="go('packages')">‹</span>Download from URL</div>
+  <div class="content">
+    <div class="card">
+      <label class="lb">Package URL</label>
+      <input class="input" value="https://release.example.com/pds/pds_app_v1.3.0.zip">
+      <label class="lb">SHA-256 (optional, for integrity check)</label>
+      <input class="input" placeholder="Paste checksum or leave empty">
+      <button class="btn pri sm" style="margin-top:14px" onclick="toast('Download started')">Start Download</button>
+    </div>
+    <div class="card">
+      <div class="row"><div class="grow"><div class="t1">pds_app_v1.3.0.zip</div><div class="t2">62.1 / 86.4 MB · 4.8 MB/s · 5s left</div></div><span class="pill pri">Downloading</span></div>
+      <div class="prog"><b style="width:72%"></b></div>
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost sm" onclick="toast('Paused')">Pause</button><button class="btn ghost sm" style="color:var(--err);border-color:var(--err)" onclick="toast('Cancelled')">Cancel</button></div>
+    </div>
+    <div class="hint">You are connected to a device Wi-Fi with no internet. Switch to a network with internet access; the download will resume automatically.</div>
+  </div>
+</div>
+
+<!-- 06 升级中 -->
+<div class="sc" id="sc-upgrading">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Upgrading · PDS-0231</div>
+  <div class="content">
+    <div class="card">
+      <div class="row"><div class="grow"><div class="t1">v1.2.3 → v1.3.0</div><div class="t2">pds_app_v1.3.0.zip · Elapsed 0:48 · ~1:10 left</div></div><div class="big" style="font-size:22px;color:var(--pri)">38%</div></div>
+      <div class="prog"><b style="width:38%"></b></div>
+    </div>
+    <div class="card steps">
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S0 Connect</div><div class="ds">SSH login to 192.168.4.1:22 OK</div></div><div class="tm">1.2s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S1 Pre-check</div><div class="ds">1.8 GB free · current v1.2.3 · unzip ✓</div></div><div class="tm">2.4s</div></div>
+      <div class="step run"><div class="dot">3</div><div class="grow"><div class="nm">S2 Upload Package</div><div class="ds">58.3 / 86.4 MB · 3.1 MB/s</div><div class="prog"><b style="width:67%"></b></div></div><div class="tm">19s</div></div>
+      <div class="step"><div class="dot">4</div><div><div class="nm">S3 Verify Upload</div><div class="ds">sha256sum compare</div></div></div>
+      <div class="step"><div class="dot">5</div><div><div class="nm">S4 Stop Service</div><div class="ds">systemctl stop pds</div></div></div>
+      <div class="step"><div class="dot">6</div><div><div class="nm">S5 Back Up Current</div><div class="ds">/opt/pds/backup/20260930_094112</div></div></div>
+      <div class="step"><div class="dot">7</div><div><div class="nm">S6 Replace Files</div><div class="ds">unzip → /opt/pds/app</div></div></div>
+      <div class="step"><div class="dot">8</div><div><div class="nm">S7 Start Service</div><div class="ds">systemctl start pds</div></div></div>
+      <div class="step"><div class="dot">9</div><div><div class="nm">S8 Verify Version &amp; Status</div><div class="ds">wait 5s, then check 3 times</div></div></div>
+      <div class="step"><div class="dot">10</div><div><div class="nm">S9 Clean Up</div></div></div>
+    </div>
+    <div class="hint">Screen stays on. Do not disconnect Wi-Fi or close the app.</div>
+  </div>
+  <div class="fixed-bottom">
+    <div class="row" style="gap:8px;justify-content:center;margin-bottom:8px;font-size:12px;color:var(--sub)">Prototype demo: <span class="chip" onclick="go('success')">→ Success</span><span class="chip" onclick="go('failed')">→ Failure</span></div>
+    <button class="btn ghost" onclick="toast('Safe to cancel during S0–S3; temp files will be removed')">Cancel Upgrade</button>
+  </div>
+</div>
+
+<!-- 07 成功 -->
+<div class="sc" id="sc-success">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Upgrade Result</div>
+  <div class="content">
+    <div class="result-hero"><div class="ico" style="background:var(--ok)">✓</div><h2>Upgrade Successful</h2><p>PDS-0231 is now running v1.3.0</p></div>
+    <div class="card">
+      <div class="kv"><span>Device</span><span>PDS-0231 (192.168.4.1)</span></div>
+      <div class="kv"><span>Version</span><span>v1.2.3 → <b style="color:var(--ok)">v1.3.0</b></span></div>
+      <div class="kv"><span>Service status</span><span style="color:var(--ok)">active · stability check 3/3 passed</span></div>
+      <div class="kv"><span>Total time</span><span>1m 58s</span></div>
+      <div class="kv"><span>Backup</span><span>/opt/pds/backup/20260930_094112</span></div>
+      <div class="kv"><span>Session ID</span><span>7c1e…a9f3</span></div>
+    </div>
+    <div class="stat"><div><b>3</b><span>Upgraded today</span></div><div><b>3</b><span>Succeeded</span></div><div><b>100%</b><span>Success rate</span></div></div>
+  </div>
+  <div class="fixed-bottom">
+    <button class="btn pri" onclick="go('devices');toast('Disconnected from PDS-0231. Select the next vehicle.')">Upgrade Next Vehicle</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="go('logdetail')">View Logs</button>
+  </div>
+</div>
+
+<!-- 08 失败 -->
+<div class="sc" id="sc-failed">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Upgrade Result</div>
+  <div class="content">
+    <div class="result-hero"><div class="ico" style="background:var(--warn)">!</div><h2>Upgrade Failed – Previous Version Restored</h2><p>PDS-0231 was rolled back and is running v1.2.3. You can retry.</p></div>
+    <div class="card">
+      <div class="kv"><span>Failed step</span><span style="color:var(--err)">S8 Verify Version &amp; Status</span></div>
+      <div class="kv"><span>Reason</span><span>Service exited 5s after start (exit 1)</span></div>
+      <div class="kv"><span>Rollback</span><span style="color:var(--ok)">OK · restored v1.2.3 · active</span></div>
+      <div class="kv"><span>Total time</span><span>2m 41s</span></div>
+    </div>
+    <div class="card" style="font-size:13px;line-height:1.7"><b>What to do next</b><br>1. Export the logs and send them to the tech lead<br>2. Check that package v1.3.0 supports this device model<br>3. Tap “Retry Upgrade” to try again</div>
+  </div>
+  <div class="fixed-bottom">
+    <div class="row" style="gap:8px"><button class="btn ghost" onclick="go('logdetail')">View Logs</button><button class="btn ghost" onclick="toast('Exported PDS_PDS-0231_20260930_094112_FAILED_RECOVERED.zip')">Export Logs</button></div>
+    <button class="btn pri" style="margin-top:8px" onclick="go('detail')">Retry Upgrade</button>
+  </div>
+</div>
+
+<!-- 09 日志列表 -->
+<div class="sc" id="sc-logs">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Logs <span class="act" onclick="toast('Export 12 sessions as zip (with summary.csv)')">Export</span></div>
+  <div class="content">
+    <div class="stat" style="margin-bottom:12px"><div><b>12</b><span>This week</span></div><div><b>10</b><span>Succeeded</span></div><div><b>2</b><span>Failed</span></div></div>
+    <div class="filter"><span class="chip on">All</span><span class="chip">Success</span><span class="chip">Failed</span><span class="chip">Today</span><span class="chip">Device ▾</span></div>
+    <div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">09-30 09:41 · v1.2.3 → v1.3.0 · 1m 58s · Zhang San</div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0187</div><div class="t2">09-30 09:12 · v1.2.3 → v1.3.0 · 2m 05s · Zhang San</div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0305</div><div class="t2">09-29 16:40 · v1.1.0 → v1.3.0 · 2m 41s · Li Si</div></div><span class="pill warn">Failed (Rolled Back)</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0412</div><div class="t2">09-29 16:02 · v1.2.3 → v1.3.0 · 0m 12s · Li Si</div></div><span class="pill err">Failed</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0098</div><div class="t2">09-28 14:20 · v1.2.0 → v1.2.3 · 1m 47s · Zhang San</div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">09-28 14:02 · v1.2.0 → v1.2.3 · 1m 52s · Zhang San</div></div><span class="pill ok">Success</span></div>
+    </div>
+  </div>
+  <div class="tabbar" id="tabbar-logs"></div>
+</div>
+
+<!-- 10 日志详情 -->
+<div class="sc" id="sc-logdetail">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar"><span class="back" onclick="go('logs')">‹</span>Session Log <span class="act" onclick="toast('Shared PDS_PDS-0305_20260929_164012_FAILED_RECOVERED.txt')">Share</span></div>
+  <div class="content">
+    <div class="card">
+      <div class="row"><div class="grow"><div class="t1">PDS-0305</div><div class="t2">2026-09-29 16:40:12 · Operator Li Si · App v1.0.0</div></div><span class="pill warn">Failed (Rolled Back)</span></div>
+      <div style="margin-top:8px">
+        <div class="kv"><span>Session ID</span><span>b41d…77e0</span></div>
+        <div class="kv"><span>Version</span><span>v1.1.0 → v1.3.0 (rolled back to v1.1.0)</span></div>
+        <div class="kv"><span>Package</span><span>pds_app_v1.3.0.zip · 3f9a…c21e</span></div>
+        <div class="kv"><span>Phone</span><span>Xiaomi 14 · Android 14</span></div>
+      </div>
+    </div>
+    <div class="card steps">
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S0 Connect</div></div><div class="tm">1.1s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S1 Pre-check</div></div><div class="tm">2.2s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S2 Upload Package</div><div class="ds">1 retry (Wi-Fi drop, resumed)</div></div><div class="tm">41s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S3 Verify Upload</div></div><div class="tm">3.0s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S4 Stop Service</div></div><div class="tm">1.8s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S5 Back Up Current</div></div><div class="tm">4.1s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S6 Replace Files</div></div><div class="tm">6.5s</div></div>
+      <div class="step done"><div class="dot">✓</div><div><div class="nm">S7 Start Service</div></div><div class="tm">0.9s</div></div>
+      <div class="step fail"><div class="dot">✕</div><div class="grow"><div class="nm">S8 Verify Version &amp; Status</div><div class="ds">status=failed, service exited with code 1</div>
+        <pre class="out">$ systemctl is-active pds
+failed
+$ journalctl -u pds -n 5 --no-pager
+pds_app[2231]: error: config version 2 not supported
+pds_app[2231]: exiting
+$ cat /opt/pds/app/VERSION
+1.3.0</pre></div><div class="tm">14s</div></div>
+      <div class="step done"><div class="dot">↺</div><div><div class="nm">RB Roll Back</div><div class="ds">restored /opt/pds/backup/20260929_164030 → active · v1.1.0</div></div><div class="tm">9.3s</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 11 设置 -->
+<div class="sc" id="sc-settings">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Settings <span class="act" onclick="toast('Import / export config JSON')">Import / Export</span></div>
+  <div class="content">
+    <div class="group-title">WI-FI</div>
+    <div><div class="cfg"><span>SSID filter pattern</span><span class="v">^PDS-</span></div><div class="cfg"><span>Wi-Fi password</span><span class="v">••••••••</span></div></div>
+    <div class="group-title">SSH</div>
+    <div><div class="cfg"><span>Device IP</span><span class="v">192.168.4.1</span></div><div class="cfg"><span>Port</span><span class="v">22</span></div><div class="cfg"><span>Username</span><span class="v">root</span></div><div class="cfg"><span>Password</span><span class="v">••••••••</span></div><div class="cfg"><span>Connect timeout</span><span class="v">10 s</span></div></div>
+    <div class="group-title">PROGRAM</div>
+    <div><div class="cfg"><span>Target directory</span><span class="v">/opt/pds/app</span></div><div class="cfg"><span>Temp directory</span><span class="v">/tmp/pds_upgrade</span></div><div class="cfg"><span>Backup dir / keep</span><span class="v">/opt/pds/backup · 3</span></div></div>
+    <div class="group-title">COMMAND TEMPLATES</div>
+    <div><div class="cfg"><span>Stop</span><span class="v">systemctl stop pds</span></div><div class="cfg"><span>Force stop</span><span class="v">pkill -9 -f pds_app</span></div><div class="cfg"><span>Start</span><span class="v">systemctl start pds</span></div><div class="cfg"><span>Status</span><span class="v">systemctl is-active pds</span></div><div class="cfg"><span>Version</span><span class="v">cat /opt/pds/app/VERSION</span></div><div class="cfg"><span>Version regex</span><span class="v">v?(\d+\.\d+\.\d+)</span></div></div>
+    <div class="group-title">OTHER</div>
+    <div><div class="cfg"><span>Operator name</span><span class="v">Zhang San</span></div><div class="cfg"><span>Show all Wi-Fi (debug)</span><span class="v">Off</span></div><div class="cfg"><span>About</span><span class="v">PDS-APP v1.0.0</span></div></div>
+    <button class="btn ghost sm" style="margin-top:14px" onclick="toast('Test: S0 ✓ 1.2s · S1 ✓ v1.2.3 · active')">Test Connection (runs S0 + S1)</button>
+  </div>
+  <div class="tabbar" id="tabbar-settings"></div>
+</div>
+
+</div></div>
+
+<script>
+const tabs=[['devices','📡','Devices'],['packages','📦','Packages'],['logs','📋','Logs'],['settings','⚙️','Settings']];
+document.querySelectorAll('.tabbar').forEach(tb=>{const cur=tb.id.replace('tabbar-','');tb.innerHTML=tabs.map(t=>`<div class="tab ${t[0]===cur?'on':''}" onclick="go('${t[0]}')"><span class="ic">${t[1]}</span>${t[2]}</div>`).join('');});
+function go(id){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+id).classList.add('on');document.querySelectorAll('.content').forEach(c=>c.scrollTop=0);}
+function openModal(ssid){if(ssid){document.getElementById('modal-ssid').textContent=ssid;document.getElementById('modal-ssid-input').value=ssid;}document.getElementById('modal').style.display='flex';}
+function closeModal(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('modal').style.display='none';}
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200);}
+const q=new URLSearchParams(location.search).get('screen');if(q==='connect'){go('devices');openModal('PDS-0187');}else{go(q||'devices');}
+</script>
+</body>
+</html>
