@@ -80,6 +80,10 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
 .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat div{background:#fff;border-radius:10px;padding:10px;text-align:center}
 .stat b{display:block;font-size:20px}.stat span{font-size:11px;color:var(--sub)}
+.ver3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}.ver3 div{background:#f7f8fa;border-radius:10px;padding:10px 6px;text-align:center}.ver3 span{font-size:11px;color:var(--sub);display:block}.ver3 b{font-size:18px;display:block;margin-top:2px}.ver3 .hl b{color:var(--pri)}
+.banner{background:#4f46e5;color:#fff;font-size:11px;text-align:center;padding:4px;letter-spacing:.5px}
+.spin{width:44px;height:44px;border:4px solid var(--pri-l);border-top-color:var(--pri);border-radius:50%;margin:0 auto 14px;animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.vno{font-size:11px;background:#eef0f3;color:var(--txt);padding:1px 6px;border-radius:6px;margin-left:6px;font-weight:500}
 </style>
 </head>
 <body>
@@ -98,6 +102,9 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
   <a onclick="go('logs')">09 日志列表</a>
   <a onclick="go('logdetail')">10 日志详情</a>
   <a onclick="go('settings')">11 设置</a>
+  <a onclick="go('identity')">12 编辑设备身份（待确认）</a>
+  <a onclick="go('reconcile')">13 中断后状态对账</a>
+  <a onclick="go('cloud')">14 Cloud Tab（二期预览）</a>
   <p style="margin-top:14px;font-size:12px">URL 参数 <code>?screen=upgrading</code> 可直接打开某页（用于截图）。</p>
 </div>
 
@@ -107,22 +114,24 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
 <!-- 01 设备列表 -->
 <div class="sc" id="sc-devices">
   <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
-  <div class="appbar">Devices <span class="act" onclick="toast('Scanning… (Android allows 4 scans per 2 min)')">↻ Refresh</span></div>
+  <div class="appbar">Devices <span class="act" onclick="toast('Opens camera to scan the QR code on the device (SSID + MAC + Vehicle No.)')" style="margin-left:auto">▣ Scan QR</span><span class="act" style="margin-left:14px" onclick="toast('Scanning… (Android allows 4 scans per 2 min)')">↻ Refresh</span></div>
   <div class="content">
     <div class="card row" onclick="go('packages')">
       <div class="grow"><h4>Current Package</h4><div class="t1">pds_app_v1.3.0.zip</div><div class="t2">v1.3.0 · 86.4 MB · Verified ✓</div></div>
       <span class="pill ok">Ready</span>
     </div>
     <div class="card row" onclick="go('detail')">
-      <div class="grow"><h4>Current Device</h4><div class="t1">PDS-0231</div><div class="t2">192.168.4.1 · v1.2.3 · Running</div></div>
+      <div class="grow"><h4>Current Device</h4><div class="t1">PDS-0231 <span class="vno">Vehicle K-118</span></div><div class="t2">192.168.4.1 · v1.2.3 · Running</div></div>
       <span class="pill pri">Connected</span>
     </div>
     <div class="group-title">NEARBY VEHICLES (4) · Last scan 12s ago</div>
+    <div class="filter" style="margin:0 0 8px"><span class="chip on">All</span><span class="chip" onclick="toast('Shows vehicles whose last known version is older than the current package (v1.3.0)')">Not on v1.3.0 (3)</span></div>
+    <div style="display:none"></div>
     <div>
-      <div class="list-item" onclick="go('detail')"><div class="sig s4"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0231</div><div class="t2">Last upgrade v1.2.3 · 09-28 14:02 · Success</div></div><span class="pill pri">Connected</span></div>
-      <div class="list-item" onclick="openModal('PDS-0187')"><div class="sig s3"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0187</div><div class="t2">Last upgrade v1.2.3 · 09-28 14:20 · Success</div></div><span class="pill gray">-62 dBm</span></div>
-      <div class="list-item" onclick="openModal('PDS-0305')"><div class="sig s2"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0305</div><div class="t2">Last upgrade v1.1.0 · 08-15 · <span style="color:var(--err)">Failed (rolled back)</span></div></div><span class="pill gray">-74 dBm</span></div>
-      <div class="list-item" onclick="openModal('PDS-0412')"><div class="sig s1"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0412</div><div class="t2">No upgrade history</div></div><span class="pill gray">-85 dBm</span></div>
+      <div class="list-item" onclick="go('detail')"><div class="sig s4"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0231 <span class="vno">K-118</span></div><div class="t2">Last upgrade v1.2.3 · 09-28 14:02 · Success</div></div><span class="pill pri">Connected</span></div>
+      <div class="list-item" onclick="openModal('PDS-0187')"><div class="sig s3"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0187 <span class="vno">K-092</span></div><div class="t2">Last upgrade v1.2.3 · 09-28 14:20 · Success</div></div><span class="pill gray">-62 dBm</span></div>
+      <div class="list-item" onclick="openModal('PDS-0305')"><div class="sig s2"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0305 <span class="vno">K-133</span></div><div class="t2">Last upgrade v1.1.0 · 08-15 · <span style="color:var(--err)">Failed (rolled back)</span></div></div><span class="pill gray">-74 dBm</span></div>
+      <div class="list-item" onclick="openModal('PDS-0412')"><div class="sig s1"><i></i><i></i><i></i><i></i></div><div class="grow"><div class="t1">PDS-0412 <span class="vno" style="background:var(--warn-l);color:var(--warn)">Unknown vehicle</span></div><div class="t2">Never connected · scan QR or connect to identify</div></div><span class="pill gray">-85 dBm</span></div>
     </div>
     <div class="t2" style="text-align:center;margin-top:14px">Vehicle not listed? Move within 10 m and make sure the device is powered on</div>
     <div style="text-align:center;margin-top:8px"><span class="chip" onclick="toast('Enter SSID manually')">Enter SSID Manually</span></div>
@@ -146,14 +155,31 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
   <div class="appbar"><span class="back" onclick="go('devices')">‹</span>Device Details <span class="act" onclick="toast('Disconnected')">Disconnect</span></div>
   <div class="content">
     <div class="card">
-      <div class="row"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">192.168.4.1:22 · SSH logged in · Signal -48 dBm</div></div><span class="pill ok">Device Ready</span></div>
-      <div style="margin-top:12px">
-        <div class="kv"><span>Current version</span><span>v1.2.3</span></div>
-        <div class="kv"><span>Service status</span><span style="color:var(--ok)">Running (active)</span></div>
-        <div class="kv"><span>Target directory</span><span>/opt/pds/app</span></div>
-        <div class="kv"><span>Free space</span><span>1.8 GB</span></div>
-        <div class="kv"><span>System</span><span>Linux 5.10 armv7l</span></div>
+      <div class="row"><div class="grow"><h4 style="margin:0">Device Identity</h4><div class="big" style="font-size:26px">Vehicle K-118</div></div><span class="pill ok">Device Ready</span></div>
+      <div style="margin-top:8px">
+        <div class="kv"><span>Device ID</span><span>PDS-SN-2024-000231</span></div>
+        <div class="kv"><span>SSID</span><span>PDS-0231</span></div>
+        <div class="kv"><span>Wi-Fi MAC</span><span>A4:CF:12:3B:9E:71</span></div>
+        <div class="kv"><span>IP / SSH</span><span>192.168.4.1:22 · logged in</span></div>
+        <div class="kv"><span>Source</span><span>/opt/pds/app/config/device.conf ✓</span></div>
       </div>
+      <div class="row" style="margin-top:8px;gap:8px"><span class="chip" onclick="toast('Shows all keys read from device.conf')">All fields (7)</span><span class="chip" onclick="go('identity')">Edit · to be confirmed</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><h4 class="grow" style="margin:0">Versions</h4><span class="pill pri">Upgrade available</span></div>
+      <div class="ver3">
+        <div><span>Cloud</span><b>v1.3.0</b><span>latest · 09-29</span></div>
+        <div class="hl"><span>On Phone</span><b>v1.3.0</b><span>selected pkg</span></div>
+        <div><span>On Device</span><b>v1.2.3</b><span>active</span></div>
+      </div>
+      <div class="t2" style="margin-top:8px">Device is behind. The package on this phone matches the latest cloud version.</div>
+    </div>
+    <div class="card">
+      <h4>Device Status</h4>
+      <div class="kv"><span>Service status</span><span style="color:var(--ok)">Running (active)</span></div>
+      <div class="kv"><span>Target directory</span><span>/opt/pds/app</span></div>
+      <div class="kv"><span>Free space</span><span>1.8 GB</span></div>
+      <div class="kv"><span>System</span><span>Linux 5.10 armv7l</span></div>
     </div>
     <div class="card">
       <h4>Upgrade Plan</h4>
@@ -181,6 +207,13 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
     <div class="row" style="gap:8px;margin-bottom:12px">
       <button class="btn pri sm" onclick="go('download')">⬇ Download from URL</button>
       <button class="btn ghost sm" onclick="toast('Opens the system file picker (SAF)')">📁 Local File</button>
+    </div>
+    <div class="card">
+      <div class="row"><h4 class="grow" style="margin:0">Cloud Versions</h4><span class="t2">updated 08:10</span></div>
+      <div class="ver3" style="grid-template-columns:1fr 1fr"><div><span>Cloud latest</span><b>v1.3.0</b><span>09-29 · 86.4 MB</span></div><div class="hl"><span>On Phone</span><b>v1.3.0</b><span>downloaded ✓</span></div></div>
+      <div class="kv" style="margin-top:6px"><span>v1.3.0 · Fix false collision alerts</span><span class="pill ok">Downloaded</span></div>
+      <div class="kv"><span>v1.2.3 · Stability fixes</span><span class="pill ok">Downloaded</span></div>
+      <div class="kv"><span>v1.2.0 · Initial release</span><span class="chip" onclick="toast('Downloading v1.2.0 from versions.json URL…')">Download</span></div>
     </div>
     <div class="group-title">LOCAL PACKAGES (3)</div>
     <div>
@@ -239,7 +272,7 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
     <div class="hint">Screen stays on. Do not disconnect Wi-Fi or close the app.</div>
   </div>
   <div class="fixed-bottom">
-    <div class="row" style="gap:8px;justify-content:center;margin-bottom:8px;font-size:12px;color:var(--sub)">Prototype demo: <span class="chip" onclick="go('success')">→ Success</span><span class="chip" onclick="go('failed')">→ Failure</span></div>
+    <div class="row" style="gap:8px;justify-content:center;margin-bottom:8px;font-size:12px;color:var(--sub)">Prototype demo: <span class="chip" onclick="go('success')">→ Success</span><span class="chip" onclick="go('failed')">→ Failure</span><span class="chip" onclick="go('reconcile')">→ Interrupted</span></div>
     <button class="btn ghost" onclick="toast('Safe to cancel during S0–S3; temp files will be removed')">Cancel Upgrade</button>
   </div>
 </div>
@@ -289,17 +322,17 @@ pre.out{background:#111827;color:#d1d5db;font-size:11px;padding:10px;border-radi
 <!-- 09 日志列表 -->
 <div class="sc" id="sc-logs">
   <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
-  <div class="appbar">Logs <span class="act" onclick="toast('Export 12 sessions as zip (with summary.csv)')">Export</span></div>
+  <div class="appbar">Logs <span class="act" style="margin-left:auto" onclick="toast('Uploading 2 pending sessions to log_upload_url…')">☁ Upload (2)</span><span class="act" style="margin-left:14px" onclick="toast('Export 12 sessions as zip (with summary.csv)')">Export</span></div>
   <div class="content">
     <div class="stat" style="margin-bottom:12px"><div><b>12</b><span>This week</span></div><div><b>10</b><span>Succeeded</span></div><div><b>2</b><span>Failed</span></div></div>
     <div class="filter"><span class="chip on">All</span><span class="chip">Success</span><span class="chip">Failed</span><span class="chip">Today</span><span class="chip">Device ▾</span></div>
     <div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">09-30 09:41 · v1.2.3 → v1.3.0 · 1m 58s · Zhang San</div></div><span class="pill ok">Success</span></div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0187</div><div class="t2">09-30 09:12 · v1.2.3 → v1.3.0 · 2m 05s · Zhang San</div></div><span class="pill ok">Success</span></div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0305</div><div class="t2">09-29 16:40 · v1.1.0 → v1.3.0 · 2m 41s · Li Si</div></div><span class="pill warn">Failed (Rolled Back)</span></div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0412</div><div class="t2">09-29 16:02 · v1.2.3 → v1.3.0 · 0m 12s · Li Si</div></div><span class="pill err">Failed</span></div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0098</div><div class="t2">09-28 14:20 · v1.2.0 → v1.2.3 · 1m 47s · Zhang San</div></div><span class="pill ok">Success</span></div>
-      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231</div><div class="t2">09-28 14:02 · v1.2.0 → v1.2.3 · 1m 52s · Zhang San</div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231 <span class="vno">K-118</span></div><div class="t2">09-30 09:41 · v1.2.3 → v1.3.0 · 1m 58s · Zhang San · <span style="color:var(--warn)">Pending upload</span></div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0187 <span class="vno">K-092</span></div><div class="t2">09-30 09:12 · v1.2.3 → v1.3.0 · 2m 05s · Zhang San · <span style="color:var(--warn)">Pending upload</span></div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0305 <span class="vno">K-133</span></div><div class="t2">09-29 16:40 · v1.1.0 → v1.3.0 · 2m 41s · Li Si · Synced</div></div><span class="pill warn">Failed (Rolled Back)</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0412</div><div class="t2">09-29 16:02 · v1.2.3 → v1.3.0 · 0m 12s · Li Si · Synced</div></div><span class="pill err">Failed</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0098 <span class="vno">K-041</span></div><div class="t2">09-28 14:20 · v1.2.0 → v1.2.3 · 1m 47s · Zhang San · Synced</div></div><span class="pill ok">Success</span></div>
+      <div class="list-item" onclick="go('logdetail')"><div class="grow"><div class="t1">PDS-0231 <span class="vno">K-118</span></div><div class="t2">09-28 14:02 · v1.2.0 → v1.2.3 · 1m 52s · Zhang San · Synced</div></div><span class="pill ok">Success</span></div>
     </div>
   </div>
   <div class="tabbar" id="tabbar-logs"></div>
@@ -354,6 +387,10 @@ $ cat /opt/pds/app/VERSION
     <div><div class="cfg"><span>Target directory</span><span class="v">/opt/pds/app</span></div><div class="cfg"><span>Temp directory</span><span class="v">/tmp/pds_upgrade</span></div><div class="cfg"><span>Backup dir / keep</span><span class="v">/opt/pds/backup · 3</span></div></div>
     <div class="group-title">COMMAND TEMPLATES</div>
     <div><div class="cfg"><span>Stop</span><span class="v">systemctl stop pds</span></div><div class="cfg"><span>Force stop</span><span class="v">pkill -9 -f pds_app</span></div><div class="cfg"><span>Start</span><span class="v">systemctl start pds</span></div><div class="cfg"><span>Status</span><span class="v">systemctl is-active pds</span></div><div class="cfg"><span>Version</span><span class="v">cat /opt/pds/app/VERSION</span></div><div class="cfg"><span>Version regex</span><span class="v">v?(\d+\.\d+\.\d+)</span></div></div>
+    <div class="group-title">DEVICE IDENTITY</div>
+    <div><div class="cfg"><span>Identity file</span><span class="v">/opt/pds/app/config/device.conf</span></div><div class="cfg"><span>Format</span><span class="v">kv</span></div><div class="cfg"><span>Field map</span><span class="v">vehicleNo=vehicle_no;…</span></div><div class="cfg"><span>Allow editing</span><span class="v">Off</span></div></div>
+    <div class="group-title">CLOUD</div>
+    <div><div class="cfg"><span>Version manifest URL</span><span class="v">https://…/versions.json</span></div><div class="cfg"><span>Log upload URL</span><span class="v">https://…/app-logs</span></div><div class="cfg"><span>Auto upload logs</span><span class="v">On</span></div><div class="cfg"><span>Check Wi-Fi settings</span><span class="v">›</span></div></div>
     <div class="group-title">OTHER</div>
     <div><div class="cfg"><span>Operator name</span><span class="v">Zhang San</span></div><div class="cfg"><span>Show all Wi-Fi (debug)</span><span class="v">Off</span></div><div class="cfg"><span>About</span><span class="v">PDS-APP v1.0.0</span></div></div>
     <button class="btn ghost sm" style="margin-top:14px" onclick="toast('Test: S0 ✓ 1.2s · S1 ✓ v1.2.3 · active')">Test Connection (runs S0 + S1)</button>
@@ -361,11 +398,78 @@ $ cat /opt/pds/app/VERSION
   <div class="tabbar" id="tabbar-settings"></div>
 </div>
 
+
+<!-- 12 Edit identity (to be confirmed) -->
+<div class="sc" id="sc-identity">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="banner">FEATURE TO BE CONFIRMED · hidden unless “Allow editing” is on</div>
+  <div class="appbar"><span class="back" onclick="go('detail')">‹</span>Edit Device Identity</div>
+  <div class="content">
+    <div class="card">
+      <label class="lb">Vehicle No.</label><input class="input" value="K-118">
+      <label class="lb">Device ID</label><input class="input" value="PDS-SN-2024-000231" disabled style="color:var(--sub)">
+      <label class="lb">SSID</label><input class="input" value="PDS-0231">
+      <div class="t2" style="margin-top:6px">Device ID is managed by the backend and cannot be changed here (recommended).</div>
+    </div>
+    <div class="hint">Changing the SSID takes effect after the device's Wi-Fi service restarts. The app will disconnect and you will need to reconnect to the new SSID.</div>
+    <div class="card" style="font-size:12px;color:var(--sub);line-height:1.7"><b style="color:var(--txt)">What happens on save</b><br>1. Back up device.conf → device.conf.bak<br>2. Write new values and read back to verify<br>3. Record the change in the operation log<br>4. (SSID only) Ask to restart Wi-Fi service</div>
+  </div>
+  <div class="fixed-bottom"><button class="btn pri" onclick="toast('Saved. device.conf updated and backed up.');go('detail')">Save Changes</button><button class="btn ghost" style="margin-top:8px" onclick="go('detail')">Cancel</button></div>
+</div>
+
+<!-- 13 Reconcile -->
+<div class="sc" id="sc-reconcile">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="appbar">Upgrade Interrupted · PDS-0231</div>
+  <div class="content">
+    <div class="result-hero" style="padding-top:28px"><div class="spin"></div><h2 style="font-size:19px">Connection lost. Checking device state…</h2><p>Reconnected to PDS-0231. Reading version, service status and upgrade marker.</p></div>
+    <div class="card">
+      <div class="kv"><span>Last known step</span><span>S7 Start Service (09:43:02)</span></div>
+      <div class="kv"><span>Upgrade marker on device</span><span style="color:var(--ok)">found · step S7 · session 7c1e…a9f3</span></div>
+      <div class="kv"><span>Version on device</span><span style="color:var(--ok)">v1.3.0 (target)</span></div>
+      <div class="kv"><span>Service status</span><span style="color:var(--ok)">active · 3/3 stability checks</span></div>
+    </div>
+    <div class="card" style="border:1.5px solid var(--ok)">
+      <div class="row"><div class="grow"><div class="t1" style="color:var(--ok)">Device was upgraded successfully</div><div class="t2">The upgrade finished on the device before the connection dropped. The session will be recorded as Success (Reconciled).</div></div></div>
+    </div>
+    <div class="card" style="font-size:12px;color:var(--sub);line-height:1.7"><b style="color:var(--txt)">Other possible outcomes</b><br>• Files replaced but service not running → Start service &amp; verify<br>• Device still on old version, untouched → Retry from the beginning<br>• Partially replaced → Resume or Roll back (recommended)</div>
+  </div>
+  <div class="fixed-bottom"><button class="btn pri" onclick="go('success');toast('Marked as Success (Reconciled). Temp files cleaned.')">Done · Clean Up</button><button class="btn ghost" style="margin-top:8px" onclick="go('logdetail')">View Logs</button></div>
+</div>
+
+<!-- 14 Cloud (Phase 2 preview) -->
+<div class="sc" id="sc-cloud">
+  <div class="statusbar"><span>9:41</span><span>▲ ◔ ▮</span></div>
+  <div class="banner">PHASE 2 PREVIEW · not in scope for phase 1</div>
+  <div class="appbar">Cloud <span class="act" onclick="toast('Syncing versions, device registry and pending logs…')">↻ Sync</span></div>
+  <div class="content">
+    <div class="card row"><div class="grow"><h4>Account</h4><div class="t1">Zhang San · Field Technician</div><div class="t2">admin.example.com · last sync 09:40</div></div><span class="pill ok">Online</span></div>
+    <div class="stat" style="margin-bottom:12px"><div><b>42</b><span>Vehicles</span></div><div><b>29</b><span>On v1.3.0</span></div><div><b style="color:var(--warn)">13</b><span>Not upgraded</span></div></div>
+    <div class="card">
+      <div class="row"><h4 class="grow" style="margin:0">Version Library</h4><span class="chip">stable ▾</span></div>
+      <div class="kv"><span>v1.3.0 · Fix false collision alerts</span><span class="pill pri">Latest</span></div>
+      <div class="kv"><span>v1.3.1-beta · Radio reconnect tuning</span><span class="pill warn">Gray: fleet B</span></div>
+      <div class="kv"><span>v1.2.3 · Stability fixes</span><span class="pill gray">Stable</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><h4 class="grow" style="margin:0">Log Sync</h4><span class="pill ok">All synced</span></div>
+      <div class="kv"><span>Sessions uploaded</span><span>12 / 12</span></div>
+      <div class="kv"><span>Auto sync</span><span>On (Wi-Fi + mobile)</span></div>
+    </div>
+    <div class="card">
+      <h4>Toolbox (requires connected device)</h4>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><span class="chip">⬇ Pull Device Logs</span><span class="chip">⬆ Push Config</span><span class="chip">⚙ Diagnostics</span><span class="chip">▶ Restart Service</span></div>
+    </div>
+    <div class="card"><h4>Upgrade Tasks</h4><div class="kv"><span>Fleet A → v1.3.0</span><span>8 / 12 done</span></div></div>
+  </div>
+  <div class="tabbar" id="tabbar-cloud"></div>
+</div>
+
 </div></div>
 
 <script>
-const tabs=[['devices','📡','Devices'],['packages','📦','Packages'],['logs','📋','Logs'],['settings','⚙️','Settings']];
-document.querySelectorAll('.tabbar').forEach(tb=>{const cur=tb.id.replace('tabbar-','');tb.innerHTML=tabs.map(t=>`<div class="tab ${t[0]===cur?'on':''}" onclick="go('${t[0]}')"><span class="ic">${t[1]}</span>${t[2]}</div>`).join('');});
+const tabs=[['devices','📡','Devices'],['packages','📦','Packages'],['logs','📋','Logs'],['settings','⚙️','Settings'],['cloud','☁️','Cloud']];
+document.querySelectorAll('.tabbar').forEach(tb=>{const cur=tb.id.replace('tabbar-','');tb.innerHTML=tabs.map(t=>`<div class="tab ${t[0]===cur?'on':''}" onclick="go('${t[0]}')" ${t[0]==='cloud'?'style="opacity:.55" title="Phase 2"':''}><span class="ic">${t[1]}</span>${t[2]}${t[0]==='cloud'?'<span style="font-size:9px">P2</span>':''}</div>`).join('');});
 function go(id){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+id).classList.add('on');document.querySelectorAll('.content').forEach(c=>c.scrollTop=0);}
 function openModal(ssid){if(ssid){document.getElementById('modal-ssid').textContent=ssid;document.getElementById('modal-ssid-input').value=ssid;}document.getElementById('modal').style.display='flex';}
 function closeModal(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('modal').style.display='none';}

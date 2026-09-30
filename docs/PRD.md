@@ -2,13 +2,13 @@
 
 | 项目 | 内容 |
 |---|---|
-| 文档版本 | v1.1 |
+| 文档版本 | v1.2 |
 | 状态 | 草稿 / 待评审 |
 | 作者 | Vic Guo |
 | 日期 | 2026-09-30 |
 | 目标平台 | Android（不上架应用市场，内部分发 APK） |
 | App 界面语言 | 英文（English），见 6.7 |
-| 配套文件 | `prototype/pds-app-prototype.html`（可点击原型）、`docs/images/`（流程图与界面截图） |
+| 配套文件 | `pds-app-prototype.html`（可点击原型，与本文档同目录）、`images/`（流程图与界面截图） |
 
 ## 修订记录
 
@@ -16,6 +16,7 @@
 |---|---|---|---|
 | v1.0 | 2026-09-30 | Vic Guo | 初稿：一期完整需求 + 二期预留方案 |
 | v1.1 | 2026-09-30 | Vic Guo | 新增 6.7 界面语言与国际化需求；原型与截图全部改为英文界面；补充 UI 术语对照表 |
+| v1.2 | 2026-09-30 | Vic Guo | 纳入 PRD 评审意见（宋家强）与业务方问题：新增 6.8 设备身份识别、6.9 版本总览、二维码连接、日志分层与云端上传方案、中断后状态对账、Wi-Fi 抢断对策、一期轻量版本服务；第 10 章扩展为二期完整方案（功能、界面、接口、扩展预留）；附录 A 评审意见处理记录 |
 
 ---
 
@@ -61,8 +62,10 @@
 
 | 分期 | 范围 | 投入 |
 |---|---|---|
-| **一期（本 PRD 主体）** | 设备扫描连接、程序包准备（URL 下载 / 本地文件）、一键自动升级、结果校验、日志记录与导出、设备参数配置 | 仅 App 开发，不依赖后端改造 |
-| **二期（仅做方案预留，本期不开发）** | 对接 admin 后台：自动登录、版本库下载、日志离线同步、设备维护工具（文件导入 / 导出等） | App + admin 后端 |
+| **一期（本 PRD 第 6 章）** | 设备扫描连接（含二维码连接）、设备身份识别（车号 / ID / SSID）、程序包准备（URL 下载 / 本地文件 / 版本清单）、版本总览（云端 / 手机 / 设备）、一键自动升级（含中断对账）、结果校验、分层日志记录与导出（可选 HTTP 上传）、设备参数配置 | 以 App 开发为主；后端仅需提供一个**静态版本清单 JSON + 程序包下载地址**（可放任意 HTTP 服务 / 对象存储，见 6.2.4），不改造 admin |
+| **二期（本 PRD 第 10 章，完整方案，本期不开发）** | 对接 admin 后台：账号登录、版本库与灰度、日志离线同步与聚合、设备台账、设备维护工具箱（文件导入 / 导出、诊断命令）、App 自更新、设备身份编辑（待确认） | App + admin 后端 |
+
+> 评审意见回应：一期确实需要"少量后端"才能实现"云上版本"展示与在线下载（评审意见 1）。方案取折中：一期只依赖一个静态 JSON 文件（无需开发接口），完全离线场景下该能力自动降级为手动 URL / 本地文件；admin 侧的正式接口放到二期。
 
 ### 2.3 一期非目标（明确不做）
 
@@ -194,7 +197,7 @@ flowchart TD
 |---|---|---|
 | F1-01 | App 启动进入"设备"页，自动触发一次 Wi-Fi 扫描，并提供手动"刷新"按钮 | P0 |
 | F1-02 | 扫描结果按 SSID 规则过滤（配置项 `ssid_pattern`，如前缀 `PDS-`），仅展示车辆设备；提供"显示全部 Wi-Fi"开关用于调试 | P0 |
-| F1-03 | 列表每项展示：SSID、信号强度（4 格图标 + dBm）、是否已连接、最近一次升级结果与版本（来自本地日志） | P0 |
+| F1-03 | 列表每项展示：SSID、**车号 / 设备 ID（来自本地设备簿，首次连接后缓存，见 6.8）**、信号强度（4 格图标 + dBm）、是否已连接、最近一次升级结果与版本（来自本地日志）。多台车混在一起时可凭车号而不是只凭 SSID 区分（评审意见 2） | P0 |
 | F1-04 | 点击列表项 → 弹出连接确认（SSID、密码已默认填充可修改）→ 连接 | P0 |
 | F1-05 | 连接过程中展示进度：正在连接 → 已连接 Wi-Fi → 正在探测设备（SSH 端口）→ 设备就绪（显示当前版本） | P0 |
 | F1-06 | 已连接状态下，顶部常驻"当前设备卡片"：SSID、IP、当前程序版本、运行状态、断开按钮 | P0 |
@@ -202,6 +205,9 @@ flowchart TD
 | F1-08 | 升级进行中禁止切换 / 断开设备，需先取消升级 | P0 |
 | F1-09 | 首次使用引导：申请定位权限 / 附近设备权限，并解释原因（Android 扫描 Wi-Fi 必须） | P0 |
 | F1-10 | 手动输入 SSID 连接（应对隐藏 SSID 或扫描节流的兜底） | P1 |
+| F1-11 | **扫码连接**：设备上粘贴二维码（内容含 SSID、Wi-Fi MAC/BSSID、可选车号与设备 ID，格式见下），App 扫码后直接连接，支持隐藏 SSID（评审意见 3）。二维码格式：`PDS:1;S:<ssid>;B:<bssid>;V:<vehicleNo>;I:<deviceId>;` | P1 |
+| F1-12 | 列表支持按"未升级到当前程序包版本"筛选，批量升级时一眼看到还剩哪几台（评审意见 2） | P1 |
+| F1-13 | **Wi-Fi 抢断防护**（评审意见"WIFI 抢断"）：① 使用 `WifiNetworkSpecifier` 绑定网络，系统不会因"无互联网"主动切走；② App 监听 `onLost`，一旦设备网络丢失立即提示并自动重连；③ 首次使用引导页与操作手册要求：在手机系统设置中把其他 Wi-Fi 设为"不自动连接"、关闭"自动切换到移动数据 / 智能 Wi-Fi 选择"等厂商功能；④ 设置页提供"检查 Wi-Fi 设置"入口，列出这些开关的位置 | P0 |
 
 #### 6.1.2 Android 平台约束（研发注意）
 
@@ -304,6 +310,43 @@ Package
 | F2-06 | 选中一个 READY 状态的程序包作为"当前待升级包"，在设备页 / 升级页顶部显示 | P0 |
 | F2-07 | 删除程序包、清理缓存；缓存总量上限（配置项，默认 2 GB） | P1 |
 | F2-08 | 下载时若手机当前连接的是设备 Wi-Fi（无互联网），提示"当前网络无法访问互联网，请切换网络后下载"，并保留任务待网络恢复自动继续 | P1 |
+| F2-09 | **版本清单（Cloud Versions）**：设置中配置 `version_manifest_url` 后，程序包页顶部显示"云端版本"区域：最新版本号、发布时间、说明、大小，以及历史版本列表；点击即可下载（内部走 F2-02 流程），无需手动粘贴 URL（评审意见 1）。清单格式见 6.2.4 | P0 |
+| F2-10 | 有网时打开 App 自动刷新版本清单并缓存；无网时显示上次缓存及时间戳；未配置清单地址时该区域隐藏 | P0 |
+
+#### 6.2.4 一期轻量版本服务（静态版本清单）
+
+一期不要求 admin 开发接口，只需在任意可通过 HTTPS 访问的位置（对象存储、Nginx 静态目录、甚至 GitHub Release）放一个 `versions.json`，由发版人员手动维护；二期由 admin 版本库自动生成同一格式，App 无需改动。
+
+```json
+{
+  "schema": 1,
+  "updatedAt": "2026-09-30T09:00:00+08:00",
+  "latest": "1.3.0",
+  "packages": [
+    {
+      "version": "1.3.0",
+      "name": "pds_app_v1.3.0.zip",
+      "url": "https://release.example.com/pds/pds_app_v1.3.0.zip",
+      "sha256": "3f9a…c21e",
+      "size": 90596352,
+      "releasedAt": "2026-09-29",
+      "notes": "Fix false collision alerts",
+      "minDeviceVersion": "1.1.0",
+      "channel": "stable"
+    },
+    { "version": "1.2.3", "name": "pds_app_v1.2.3.bin", "url": "…", "sha256": "…", "size": 43201536, "releasedAt": "2026-09-10", "notes": "…", "channel": "stable" }
+  ]
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `latest` | 当前推荐版本，用于版本总览中的"Cloud"列（见 6.9） |
+| `packages[]` | 可下载的版本列表，按版本号倒序；App 用 `sha256` 做下载后校验 |
+| `minDeviceVersion` | 可选，设备当前版本低于该值时提示"需先升级到中间版本" |
+| `channel` | 可选，`stable` / `beta`，一期只展示 `stable`，二期用于灰度 |
+
+App 侧对清单的处理：HTTPS GET，`ETag`/`If-None-Match` 缓存；解析失败或 `schema` 不匹配时提示"版本清单格式错误"，保留旧缓存。
 
 #### 6.2.3 程序包状态流转
 
@@ -331,7 +374,17 @@ stateDiagram-v2
 - 已选择一个 READY 状态的程序包；
 - 手机电量 ≥ 20%（低于时警告但不阻止）。
 
-升级确认页展示：设备 SSID、设备当前版本 → 目标版本、程序包名称与大小、预计耗时、目标目录；用户点击"开始升级"后进入自动流程，期间保持屏幕常亮，并以前台服务（Foreground Service）方式运行，防止 App 被系统回收。
+升级确认页展示：设备车号 / ID / SSID、设备当前版本 → 目标版本、程序包名称与大小、预计耗时、目标目录；用户点击"开始升级"后进入自动流程，期间保持屏幕常亮，并以前台服务（Foreground Service）方式运行，防止 App 被系统回收。
+
+**升级前版本比对（必做，评审意见 6）**：进入确认页时 App 已通过 S0/S1 读到设备当前版本，按下表给出提示：
+
+| 情况 | 提示 | 默认动作 |
+|---|---|---|
+| 目标版本 > 当前版本 | 正常展示 `v1.2.3 → v1.3.0` | 允许升级 |
+| 目标版本 == 当前版本 | "Device already runs v1.3.0. Reinstall anyway?" | 需勾选"强制重装"才能继续 |
+| 目标版本 < 当前版本 | "Target v1.2.3 is older than the device's v1.3.0. Downgrade?" | 二次确认 |
+| 云端 latest > 目标版本（已配置版本清单） | "A newer version v1.4.0 is available in Cloud Versions." | 提示但允许继续 |
+| 当前版本 < `minDeviceVersion` | "Device must be upgraded to v1.1.0 first." | 阻止 |
 
 #### 6.3.2 升级步骤序列
 
@@ -350,6 +403,19 @@ stateDiagram-v2
 | S8 | 结果校验 | 等待 `{verify_delay}`（默认 5 s）后执行 `{cmd_status}` 与 `{cmd_version}`；要求：进程运行中 且 版本号 == 目标版本；可选：连续 3 次间隔 3 s 检查进程仍存活（防止启动后崩溃） | 30 s | 触发回滚 |
 | S9 | 清理 | 删除 `{tmp_dir}/{session_id}`；按 `backup_keep` 保留最近 N 份备份 | 15 s | 仅记录警告，不影响成功结论 |
 | S10 | 断开 | 关闭 SSH；记录总耗时；写日志 | — | — |
+
+**升级标记文件（用于中断后对账）**：S4 之前在设备上写入 `{tmp_dir}/{session_id}.state`（JSON：sessionId、targetVersion、packageSha256、当前步骤、时间戳），之后每步更新；S9 清理时删除。作用是当手机侧中断后重新连上设备时，App 能从设备上读出"上次升级到底进行到哪一步"，而不是只凭手机本地记录猜测（评审意见 5）。
+
+**中断后状态对账（Reconcile）**：以下任一情况触发：升级中 Wi-Fi 丢失且 60 s 内重连成功；App 被杀 / 手机重启后再次连接同一设备；用户在"未完成会话"提示中点击"Check device"。对账逻辑：
+
+| 设备上读到的情况 | 判定 | App 行为 |
+|---|---|---|
+| `{cmd_version}` == 目标版本 且 `{cmd_status}` 运行中 | 设备其实已升级成功 | 会话结果标为 **SUCCESS（Reconciled）**，补做 S9 清理，提示"Device was upgraded successfully before the connection dropped" |
+| 版本 == 目标版本 但未运行 | 替换完成但启动失败 / 未启动 | 执行 S7→S8；失败则回滚 |
+| 版本 == 旧版本 且运行中，无 state 文件或 state 步骤 ≤ S3 | 升级未开始改动设备 | 会话标为 INTERRUPTED，提示可直接重新开始 |
+| 版本 == 旧版本 且运行中，state 显示已回滚 | 设备侧已自动回滚（若 `{cmd_start}` 由 watchdog 拉起）| 会话标为 FAILED_RECOVERED |
+| 程序未运行、目标目录不完整 / 版本无法读取 | 设备处于半升级状态 | 提示用户选择"Resume（从 S6 重新替换）"或"Roll back"，默认推荐 Roll back |
+| SSH 无法连接 | 无法对账 | 保持 INTERRUPTED，提示靠近设备重试 |
 
 **回滚（Rollback）流程**：`{cmd_stop}` → `rm -rf {target_dir}/*` → `cp -a {backup_dir}/{ts}/. {target_dir}/` → `{cmd_start}` → `{cmd_status}` + `{cmd_version}` 校验为旧版本。回滚成功 → 结果"失败（已恢复旧版本）"；回滚失败 → 结果"失败（设备异常，需人工介入）"，并在日志中标红。
 
@@ -383,11 +449,24 @@ stateDiagram-v2
     RollbackA --> FailedManual: 启动失败
     RollbackB --> FailedRecovered: 恢复备份并启动成功
     RollbackB --> FailedManual: 恢复失败
+    Uploading --> Interrupted: Wi-Fi 丢失/App 被杀
+    Stopping --> Interrupted: Wi-Fi 丢失/App 被杀
+    Replacing --> Interrupted: Wi-Fi 丢失/App 被杀
+    Starting --> Interrupted: Wi-Fi 丢失/App 被杀
+    Verifying --> Interrupted: Wi-Fi 丢失/App 被杀
+    Interrupted --> Reconciling: 重新连接同一设备
+    Reconciling --> Success: 设备已是目标版本且运行中
+    Reconciling --> Starting: 已替换未启动
+    Reconciling --> Replacing: 用户选择 Resume
+    Reconciling --> RollbackB: 半升级状态, 用户选择回滚
+    Reconciling --> FailedClean: 设备未被改动
+    Reconciling --> Interrupted: SSH 不可达
     Success --> [*]
     FailedClean --> [*]
     FailedRecovered --> [*]
     FailedManual --> [*]
 
+    note right of Reconciling: 读取设备版本/状态/state 文件后判定
     note right of FailedClean: 设备未被改动, 可直接重试
     note right of FailedRecovered: 已回滚到旧版本, 可重试
     note right of FailedManual: 设备可能处于异常状态, 需技术人员介入
@@ -401,7 +480,8 @@ stateDiagram-v2
 | F3-02 | 顶部总进度与预计剩余时间 | P1 |
 | F3-03 | "取消"按钮：S0–S3 阶段可安全取消（清理临时文件）；S4 之后取消 = 触发回滚，需二次确认 | P0 |
 | F3-04 | 升级中屏幕常亮、前台服务通知栏常驻；用户切到后台再回来状态保持 | P0 |
-| F3-05 | 升级中检测到 Wi-Fi 断开：暂停并尝试自动重连（最多 60 s）；重连成功后从当前步骤幂等恢复（S2 续传 / S4 之后重新进入校验或回滚判断）；重连失败 → 标记"中断"，指导用户重新连接后选择"继续 / 回滚" | P0 |
+| F3-05 | 升级中检测到 Wi-Fi 断开：暂停并尝试自动重连（最多 60 s）；重连成功后先执行**状态对账**（6.3.2），再决定续传 / 继续 / 回滚 / 直接判成功；重连失败 → 标记 INTERRUPTED，指导用户重新连接后进入对账 | P0 |
+| F3-09 | 对账页（Reconciling）：显示"Connection lost. Checking device state…"，读取完成后展示设备实际版本 / 状态与判定结论，按 6.3.2 表给出按钮（Done / Resume / Roll Back / Retry later） | P0 |
 | F3-06 | 每一步的命令与设备输出可展开查看（技术人员用），默认折叠 | P1 |
 | F3-07 | 结果页：成功（绿）/ 失败已恢复（橙）/ 失败需人工（红）三种；显示升级前后版本、总耗时、失败步骤与原因摘要；按钮："查看日志"、"重试"、"升级下一台" | P0 |
 | F3-08 | 目标版本 == 当前版本时提示"设备已是该版本"，允许用户选择"强制重装" | P1 |
@@ -420,8 +500,9 @@ stateDiagram-v2
 | E08 | 备份失败 | S5 | 重启旧程序 | "备份失败，已恢复运行，升级未执行" |
 | E09 | 替换 / 启动 / 校验失败 | S6–S8 | 回滚 B | "升级失败，已自动恢复到 v1.2.3" |
 | E10 | 回滚失败 | 回滚校验 | 标记需人工 | "设备状态异常，请勿断电，联系技术人员并导出日志" |
-| E11 | 升级中 App 被杀 / 手机重启 | 前台服务 + 会话持久化 | 下次打开 App 检测到未完成会话，提示用户连接同一设备后选择"检查设备状态 / 回滚" | "上次对 PDS-0231 的升级未完成" |
-| E12 | 升级中用户切换 Wi-Fi / 断开 | F3-05 | 同 E05 逻辑 | — |
+| E11 | 升级中 App 被杀 / 手机重启 | 前台服务 + 会话持久化 | 下次打开 App 检测到未完成会话，提示用户连接同一设备后进入对账；对账可能得出"其实已成功"（评审意见 5） | "Last upgrade of PDS-0231 was interrupted. Connect to it to check the result." |
+| E12 | 升级中用户切换 Wi-Fi / 系统抢断到其他 Wi-Fi | F3-05 / F1-13 | 自动重连 → 对账 | "Wi-Fi connection lost. Reconnecting…" |
+| E16 | 对账时发现设备已升级成功但手机没有记录（如手机换了 / 日志被清） | 对账读到目标版本运行中，本地无会话 | 新建一条 result=SUCCESS(Reconciled) 的会话，步骤日志标注"reconstructed from device state file" | — |
 | E13 | 版本命令输出格式与预期不符 | S8 正则不匹配 | 视为校验失败 → 回滚；技术人员可在设置中调整 `version_regex` | "无法识别设备版本输出" |
 | E14 | 目标版本低于当前版本（降级） | 确认页比较 | 允许但提示确认 | "目标版本低于当前版本，确定降级？" |
 | E15 | 手机存储不足 | 下载 / 导入前检查 | 阻止 | "手机剩余空间不足" |
@@ -437,6 +518,16 @@ stateDiagram-v2
 
 ### 6.5 日志记录与导出
 
+#### 6.5.0 日志分层（评审意见 4）
+
+| 层 | 名称 | 内容 | 存储 | 用途 |
+|---|---|---|---|---|
+| L1 | **App 操作日志（Operation Log）** | 用户操作（扫描、连接、选包、开始 / 取消升级）、App ↔ 版本服务 / admin 的请求与响应摘要、App ↔ 设备的连接事件（Wi-Fi 连上 / 丢失、SSH 登录 / 断开）、异常与崩溃 | 按天滚动文件 `app-yyyyMMdd.log`，保留 30 天 | 排查 App 自身与网络问题 |
+| L2 | **设备控制台日志（Device Console Log）** | SSH 会话中每条命令的原文（密码脱敏）、stdout / stderr、exit code、耗时；SFTP 传输进度节点 | 作为 `StepLog.stdout/stderr` 挂在升级会话下 | 排查设备侧升级失败 |
+| — | **升级会话（UpgradeSession）** | 一次升级的结构化结果，把 L1 中该会话相关事件与 L2 全部步骤串起来 | Room 数据库 | 导出、统计、云端同步的基本单位 |
+
+导出时一条会话 = `session.json`（结构化）+ `session.txt`（人类可读，L1 与 L2 按时间线合并）；批量导出 zip 内另附 `app-*.log`。
+
 #### 6.5.1 日志模型
 
 ```
@@ -451,6 +542,10 @@ UpgradeSession
 ├── failedStep / failReason
 ├── appVersion / phoneModel / androidVersion
 ├── operator           一期：设置页中填写的操作人姓名（可空）
+├── vehicleNo / deviceId   来自设备身份文件（6.8）
+├── reconciled         是否经对账得出结论
+├── syncStatus         LOCAL | PENDING | SYNCED | FAILED（一期用于 HTTP 上传，二期用于 admin 同步）
+├── syncedAt
 └── steps[]            StepLog
       ├── stepCode     S0…S10 / RB（回滚）
       ├── name
@@ -475,6 +570,30 @@ UpgradeSession
 | F5-05 | 日志中所有密码字段脱敏为 `******` | P0 |
 | F5-06 | 日志存储上限（默认 500 个会话或 200 MB），超限按时间 FIFO 清理并提示 | P1 |
 | F5-07 | 统计卡片：今日 / 本次 App 启动以来升级台数、成功率 | P2 |
+| F5-08 | **日志上传到云端（一期简化版）**：设置中配置 `log_upload_url`（HTTPS POST，可带固定 token 头）后，日志页出现"Upload to Cloud"按钮及每条会话的同步状态标签（Local / Pending / Synced / Failed）；点击后把所有 `LOCAL/FAILED` 会话逐条以 `session.json` 上传（`sessionId` 幂等），成功后标 SYNCED；有网时也可自动上传（开关）。服务端一期可以只是一个"落盘 JSON"的简单接收端，二期替换为 admin 正式接口（10.3） | P1 |
+
+#### 6.5.3 日志上传流程（一期 / 二期通用）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as App
+    participant Q as 本地同步队列(Room)
+    participant S as 接收端<br/>一期: log_upload_url<br/>二期: admin /api/app-logs
+    A->>Q: 升级会话结束 → syncStatus=PENDING
+    loop 有互联网 且 (手动点击 或 自动上传开启)
+        Q->>S: POST session.json (Idempotency-Key = sessionId)
+        alt 2xx
+            S-->>Q: {accepted:true}
+            Q->>Q: syncStatus=SYNCED, syncedAt=now
+        else 409 已存在
+            Q->>Q: 视为 SYNCED
+        else 网络错误 / 5xx
+            Q->>Q: syncStatus=FAILED, 指数退避后重试(最多 5 次)
+        end
+    end
+    Note over S: 二期 admin 侧按 ssid/deviceId 聚合<br/>得到每台设备当前版本与未升级清单
+```
 
 ### 6.6 设置 / 设备配置项
 
@@ -501,6 +620,12 @@ UpgradeSession
 | 命令 | `version_regex` | 版本提取正则 | `v?(\d+\.\d+\.\d+)` |
 | 校验 | `verify_delay` / `verify_stable_checks` / `verify_interval` | 启动后校验参数 | `5 s` / `3` / `3 s` |
 | 程序包 | `allowed_extensions` / `min_size` / `max_size` | 校验参数 | `bin,zip,tar.gz` / `1 MB` / `2 GB` |
+| 身份 | `identity_file` | 设备身份 / 配置文件路径（见 6.8） | `/opt/pds/app/config/device.conf` |
+| 身份 | `identity_format` | 文件格式：`kv`（key=value）/ `json` / `yaml` | `kv` |
+| 身份 | `identity_map` | 字段映射：`vehicleNo=vehicle_no;deviceId=device_id;ssid=wifi_ssid` | 见左 |
+| 身份 | `identity_editable` | 是否允许在 App 内编辑身份（待业务确认，默认关） | `false` |
+| 云端 | `version_manifest_url` | 版本清单 JSON 地址（6.2.4），空 = 隐藏云端版本 | 空 |
+| 云端 | `log_upload_url` / `log_upload_token` / `log_auto_upload` | 日志上传接收端（6.5 F5-08） | 空 / 空 / `false` |
 | 其他 | `operator_name` | 操作人姓名（写入日志） | 空 |
 | 其他 | `debug_show_all_wifi` | 显示全部 Wi-Fi | `false` |
 
@@ -570,12 +695,77 @@ UpgradeSession
 | S9 清理临时文件 | S9 Clean Up | |
 | RB 回滚 | RB Roll Back | |
 | 结果枚举 | SUCCESS / FAILED_CLEAN / FAILED_RECOVERED / FAILED_MANUAL / CANCELLED / INTERRUPTED | 日志字段，界面显示为 Success / Failed / Failed (Rolled Back) / Needs Attention / Cancelled / Interrupted |
+| 车号 / 设备 ID | Vehicle No. / Device ID | 设备身份卡 |
+| 版本总览：云端 / 手机 / 设备 | Versions: Cloud / On Phone / On Device | 6.9 |
+| 扫码连接 | Scan QR | 设备页 |
+| 状态对账 | Checking device state… | 中断恢复页 |
+| 上传到云端 / 同步状态 | Upload to Cloud / Local · Pending · Synced · Failed | 日志页 |
+
+### 6.8 设备身份识别（业务方问题 1、2）
+
+#### 6.8.1 背景
+
+设备只有 SSID 对外可见，多台车停在一起时运维员分不清哪台是哪台（评审意见 2）。设备上的程序配置文件中记录了车号、设备 ID、SSID 等信息，App 连接后应把这些读出来展示，并缓存为"设备簿"供列表使用。
+
+#### 6.8.2 需求
+
+| 编号 | 需求 | 优先级 |
+|---|---|---|
+| F8-01 | SSH 探测成功后（6.1 的"设备就绪"阶段）自动读取 `identity_file`，按 `identity_format` / `identity_map` 解析出：车号（Vehicle No.）、设备 ID（Device ID）、SSID、以及文件中其他键值（原样列出，折叠显示） | P0 |
+| F8-02 | 设备详情页顶部"Device Identity"卡片展示：车号（大字）、设备 ID、SSID、Wi-Fi MAC（BSSID，来自系统 API）、设备 IP；读取失败时显示"Identity unavailable"并给出原因（文件不存在 / 解析失败），不阻塞升级 | P0 |
+| F8-03 | 本地设备簿（DeviceBook）：以 SSID 为主键缓存车号 / 设备 ID / 最近连接时间 / 最近版本；设备列表（F1-03）与日志列表都显示车号；扫码（F1-11）得到的车号也写入设备簿 | P0 |
+| F8-04 | 一致性检查：若配置文件中的 SSID 与当前连接的 SSID 不一致，或设备簿中该 SSID 之前记录的车号与本次读到的不同，用黄色提示"Identity mismatch"，供人工核对（可能是设备被换车） | P1 |
+| F8-05 | 身份信息写入升级会话日志（`vehicleNo` / `deviceId`），并作为二期 admin 关联设备台账的键 | P0 |
+| F8-06 | **编辑身份（待业务确认）**：`identity_editable=true` 时，Device Identity 卡片出现"Edit"；可修改车号 / 设备 ID / SSID，保存流程：备份原文件 → 写入新值 → 校验回读 → 若修改了 SSID 则提示"设备 Wi-Fi 名称将在设备重启 / 网络服务重启后生效，App 将断开连接"，并提供"Restart Wi-Fi service"（`cmd_restart_wifi`，可配置）按钮。所有修改写入操作日志 | P2（待确认） |
+
+> 关于 F8-06 的建议：车号 / 设备 ID 属于台账数据，如果二期由 admin 统一管理，建议 App 端只读，避免现场随意改动导致台账与设备不一致；如果现场确实需要（例如设备换车），建议只开放车号编辑，设备 ID 与 SSID 保持只读。请业务方确认。
+
+#### 6.8.3 读取流程
+
+```mermaid
+flowchart LR
+    A[SSH 登录成功] --> B["cat {identity_file}"]
+    B --> C{文件存在?}
+    C -- 否 --> D[Identity unavailable<br/>记录原因]
+    C -- 是 --> E[按 identity_format 解析]
+    E --> F{解析成功?}
+    F -- 否 --> D
+    F -- 是 --> G[按 identity_map 取出<br/>vehicleNo / deviceId / ssid]
+    G --> H{与当前 SSID /<br/>设备簿一致?}
+    H -- 否 --> I[显示 Identity mismatch 提示]
+    H -- 是 --> J[显示身份卡片]
+    I & J --> K[写入设备簿 DeviceBook]
+    D --> L[身份卡片显示不可用<br/>升级流程不受影响]
+```
+
+### 6.9 版本总览（业务方问题 3）
+
+在**设备详情页**用一张卡片同时展示三个版本，并标出它们之间的关系，回答"该不该升、用哪个包升"：
+
+| 列 | 英文 | 数据来源 | 无数据时 |
+|---|---|---|---|
+| 云端最新 | Cloud | `versions.json` 的 `latest`（6.2.4）；二期来自 admin 版本库 | `—`（未配置清单 / 无缓存），并提示 "Configure Cloud Versions in Settings" |
+| 手机本地 | On Phone | 当前选中的程序包版本；未选中时显示本地缓存中最高版本 | `—` + "Download or select a package" |
+| 已连接设备 | On Device | S1 读取的 `{cmd_version}` | `—` + "Connect to a device" |
+
+状态判定与提示（基于三者比较）：
+
+| 情况 | 卡片提示 | 主按钮 |
+|---|---|---|
+| Device == Phone == Cloud | "Up to date" | Start Upgrade 置灰（可强制重装） |
+| Device < Phone == Cloud | "Upgrade available" | Start Upgrade |
+| Device < Phone < Cloud | "A newer version is in the cloud. Download v1.4.0?" | Download latest / Upgrade with v1.3.0 |
+| Device == Cloud，Phone 旧 | "Device is already on the latest version" | 置灰 |
+| Phone 为空，Cloud 有 | "Download v1.3.0 to upgrade" | Download |
+| Cloud 未知 | 只比较 Device 与 Phone | 按 6.3.1 表 |
+
+同一张卡片在**程序包页**顶部以精简形式（Cloud / On Phone 两列）复用，方便在办公室提前下载。
 
 ---
 
 ## 7. 界面原型
 
-可点击原型见 `prototype/pds-app-prototype.html`（浏览器打开即可，手机框内点击导航）。原型界面文案为英文（与 6.7 一致），以下为各页面截图与中文说明。
+可点击原型见同目录下的 `pds-app-prototype.html`（浏览器打开即可，手机框内点击导航）。原型界面文案为英文（与 6.7 一致），以下为各页面截图与中文说明。
 
 ### 7.1 信息架构
 
@@ -585,18 +775,22 @@ flowchart TD
     Root --> Tab2[程序包 Tab]
     Root --> Tab3[日志 Tab]
     Root --> Tab4[设置 Tab]
-    Tab1 --> P1[设备列表 / 扫描]
+    Tab1 --> P1[设备列表 / 扫描 / 扫码]
     P1 --> P2[连接确认弹窗]
-    P2 --> P3[设备详情 / 升级确认]
+    P2 --> P3[设备详情: 身份卡 + 版本总览 + 升级确认]
+    P3 --> P12[编辑身份 · 待确认]
     P3 --> P4[升级进行中]
     P4 --> P5[升级结果]
+    P4 -. 中断 .-> P13[状态对账]
+    P13 --> P5
     P5 --> P6[会话日志详情]
-    Tab2 --> P7[程序包列表]
+    Tab2 --> P7[程序包列表 + 云端版本]
     P7 --> P8[URL 下载]
     P7 --> P9[本地选择]
-    Tab3 --> P10[会话列表 / 筛选 / 导出]
+    Tab3 --> P10[会话列表 / 筛选 / 导出 / 上传云端]
     P10 --> P6
     Tab4 --> P11[配置分组编辑 / 导入导出 / 测试连接]
+    Root -. 二期 .-> Tab5[Cloud Tab: 登录 / 版本库 / 同步 / 工具箱]
 ```
 
 ### 7.2 页面截图
@@ -614,12 +808,17 @@ flowchart TD
 | 日志列表 | ![](images/ui-09-logs.png) |
 | 日志详情 | ![](images/ui-10-log-detail.png) |
 | 设置 | ![](images/ui-11-settings.png) |
+| 编辑设备身份（待确认功能） | ![](images/ui-12-edit-identity.png) |
+| 中断后状态对账 | ![](images/ui-13-reconcile.png) |
+| Cloud Tab（二期预览） | ![](images/ui-14-cloud-phase2.png) |
 
 ### 7.3 页面说明
 
-**设备页**：顶部为"当前程序包"与"当前设备"两张状态卡，一眼看到"准备用什么包、升哪台车"。列表按信号强度排序，每项右侧显示该车最近一次升级版本，方便在停车场批量升级时区分"已升 / 未升"。
+**设备页**：顶部为"当前程序包"与"当前设备"两张状态卡，一眼看到"准备用什么包、升哪台车"。列表按信号强度排序，每项显示车号（来自设备簿）与最近一次升级版本，方便在停车场批量升级时区分"已升 / 未升"；右上角提供扫码连接。
 
-**升级确认页**：把"当前版本 → 目标版本"用大字号放在最显眼位置，避免升错包；"开始升级"按钮为整页唯一主操作。
+**设备详情 / 升级确认页**：自上而下依次是 Device Identity（车号大字、设备 ID、SSID、MAC、IP）、Versions（Cloud / On Phone / On Device 三列 + 状态结论）、Upgrade Plan；"Start Upgrade"为整页唯一主操作，版本比对结论直接决定按钮是否可用。
+
+**状态对账页**：连接中断后重新连上设备时出现，显示 App 正在读取设备实际版本 / 状态 / 升级标记文件，并给出结论与下一步按钮，避免"设备其实已经升好了但 App 报失败"。
 
 **升级进行中页**：步骤时间线自上而下，当前步骤高亮并显示耗时，上传步骤带进度条；底部"取消"按钮在 S4 之后变为"取消并回滚"，需二次确认。
 
@@ -635,7 +834,7 @@ flowchart TD
 
 | 类别 | 需求 |
 |---|---|
-| 系统版本 | Android 8.0（API 26）及以上；重点适配 Android 10–14 |
+| 系统版本 | 建议 **Android 10（API 29）及以上**（`WifiNetworkSpecifier` 从 API 29 起可用，低版本连接方案不同，适配成本高）；重点适配 Android 12–15。最终最低版本待现场调研员工手机后确定（评审意见 7，见 Q9） |
 | 语言 | 界面语言英文；字符串资源化，预留多语言目录（见 6.7） |
 | 权限 | 定位（扫描 Wi-Fi）、附近设备（Android 13+）、通知（前台服务）、存储（SAF 方式无需全盘存储权限） |
 | 安全 | 配置中的密码使用 Android Keystore 加密存储；日志脱敏；SSH 采用密码认证（设备现状），预留公钥认证配置；APK 签名内部管理 |
@@ -662,69 +861,152 @@ flowchart TD
 
 ---
 
-## 10. 二期规划（仅方案预留，不开发）
+## 10. 二期方案（完整方案，本期不开发）
 
-### 10.1 背景
+### 10.1 背景与目标
 
-已有 admin 后台管理系统；设备程序通过电台通道上报 GPS / 告警等信息到 admin；admin 提供轨迹回放、告警报表。二期目标是把 App 从"孤立工具"变为"admin 的移动端运维入口"。
+已有 admin 后台管理系统；设备程序通过电台通道上报 GPS / 告警等信息到 admin；admin 提供轨迹回放、告警报表。二期目标是把 App 从"孤立的升级工具"变为"admin 的移动端运维入口"，实现：
 
-### 10.2 二期功能方向
+| 目标 | 衡量 |
+|---|---|
+| 版本从 admin 统一发布，现场零手工传包 | 运维员不再粘贴 URL / 拷文件；版本清单由 admin 自动生成 |
+| 每台设备的版本状态在 admin 可见 | 升级日志离线同步后，admin 能列出"哪些设备还在旧版本" |
+| App 成为通用运维工具 | 现场可拉取设备日志、下发配置，而不用带电脑 |
+| 一期 App 平滑演进 | 二期只新增模块与一个 Tab，不推翻一期流程与数据结构 |
 
-| 方向 | 描述 | 依赖 |
-|---|---|---|
-| P2-01 账号与登录 | App 启动自动连接 admin，使用 admin 账号登录（token 缓存，离线可用） | admin 提供登录 / token 刷新接口 |
-| P2-02 版本库 | admin 上传并管理程序版本（版本号、说明、sha256、适用设备型号、发布状态）；App 内直接浏览并下载对应版本，替代手动粘贴 URL / 选本地文件 | admin 版本管理模块 + 下载接口 |
-| P2-03 日志离线同步 | App 内升级日志在有网时自动上传 admin；admin 聚合出"每台设备当前版本、未升级设备清单、升级成功率" | admin 日志接收接口 + 设备台账关联（SSID ↔ 车辆） |
-| P2-04 设备维护工具箱 | 连接设备后可执行：设备运行日志文件导出（SFTP 拉取到手机 → 分享 / 上传 admin）、文件导入（配置文件下发）、预定义诊断命令（重启程序、查看状态）、其他后续设计 | 主要为 App 侧扩展 |
-| P2-05 App 自更新 | admin 管理 APK 版本，App 内检测更新 | admin APK 分发接口 |
+### 10.2 二期功能清单
 
-### 10.3 二期架构预留
+| 编号 | 功能 | 描述 | 依赖 admin | 优先级 |
+|---|---|---|---|---|
+| P2-01 | 账号登录 | App 启动时用 admin 账号登录（用户名 + 密码 / 扫码登录），token 缓存，离线可继续使用一期全部功能；操作人姓名自动来自账号，替代一期手填 | 登录 / token 刷新接口；App 端权限角色（运维员 / 技术负责人） | P0 |
+| P2-02 | 版本库 | admin 上传程序包并维护版本号、说明、sha256、适用设备型号、发布状态（草稿 / 灰度 / 正式 / 下线）；App 内 Cloud 页展示版本列表并直接下载；`versions.json` 由 admin 生成，一期 App 逻辑复用 | 版本管理模块 + 下载接口（支持 Range） | P0 |
+| P2-03 | 灰度 / 定向发布 | admin 可指定"允许升级的车辆范围"（按车号 / 车队 / 设备型号）；App 在版本总览与确认页显示"该版本是否适用于当前设备"，不适用时阻止 | 版本 ↔ 设备范围规则 | P1 |
+| P2-04 | 日志离线同步 | 一期 F5-08 的接收端替换为 admin 正式接口；自动同步（有网即传）；admin 聚合出每台设备当前版本、升级历史、成功率、未升级清单，并提供导出 | 日志接收接口 + 聚合报表 | P0 |
+| P2-05 | 设备台账 | admin 维护车辆 ↔ 设备 ID ↔ SSID ↔ Wi-Fi MAC 的映射，可生成设备二维码（F1-11 格式）供打印粘贴；App 有网时同步台账到本地设备簿，离线也能在列表中显示车号 | 台账模块 + 二维码生成 | P0 |
+| P2-06 | 设备身份编辑（承接 F8-06，待确认） | 若确认需要：编辑走 admin 审批或至少记录到台账变更历史；App 端编辑后自动把新值同步到 admin | 台账变更接口 | P2 |
+| P2-07 | 设备维护工具箱 | 连接设备后可执行：① 拉取设备运行日志（SFTP 下载到手机 → 分享 / 上传 admin）；② 下发配置文件（从 admin 或手机本地选择 → 备份 → 替换 → 重启服务）；③ 预定义诊断命令（重启程序、查看状态、查看磁盘、查看最近 N 行日志）；④ 自定义命令（仅技术负责人角色，需二次确认）。所有操作复用升级引擎的 Step 框架与日志格式 | 主要为 App 侧；诊断命令模板可由 admin 下发 | P1 |
+| P2-08 | App 自更新 | admin 管理 APK 版本；App 启动检测更新，提示下载安装（内部分发，非应用市场） | APK 分发接口 | P1 |
+| P2-09 | 远程配置 | 一期设置页中的设备参数（IP / 端口 / 命令模板等）可由 admin 集中下发，避免每台手机手动导入 JSON | 配置下发接口 | P1 |
+| P2-10 | 任务模式（预留） | admin 创建"升级任务"（版本 + 车辆清单），App 内领取任务，逐台完成后自动回传进度；admin 看任务完成率 | 任务模块 | P2 |
+| P2-11 | 多语言（预留） | 补充 `values-zh-rCN` 翻译，设置中切换 | 无 | P2 |
+
+### 10.3 二期系统架构
 
 ```mermaid
 flowchart LR
-    subgraph App
-        UE[升级引擎]
-        TB[维护工具箱<br/>二期]
-        PM[程序包管理]
-        LOG[日志]
-        SYNC[同步模块<br/>一期空实现]
-        AUTH[账号模块<br/>二期]
+    subgraph App["App（二期）"]
+        UI1["一期页面<br/>Devices / Packages / Logs / Settings"]
+        UI2["Cloud Tab（新增）<br/>Account / Versions / Sync / Toolbox"]
+        UE["升级引擎（复用）"]
+        TB["维护工具箱 Steps"]
+        PM["程序包管理<br/>source=ADMIN"]
+        DB["设备簿 ↔ 台账同步"]
+        LOG["日志 + 同步队列"]
+        AUTH["账号 / token"]
+        RC["远程配置"]
     end
     subgraph Admin["admin 后台"]
-        API_AUTH[登录/Token]
-        API_VER[版本库 API]
-        API_LOG[日志接收 API]
-        API_APK[APK 更新 API]
-        AGG[聚合分析<br/>设备版本台账]
+        A1["/auth 登录 / 刷新"]
+        A2["/versions 版本库 + 灰度规则"]
+        A3["/app-logs 日志接收"]
+        A4["/devices 台账 + 二维码"]
+        A5["/app-config 远程配置"]
+        A6["/apk App 更新"]
+        AGG["聚合分析<br/>设备版本台账 / 未升级清单 / 成功率"]
+        ADM["admin 界面<br/>轨迹回放 / 告警报表（已有）<br/>版本管理 / 升级看板（新增）"]
     end
-    DEV[车载设备]
-    RADIO[电台通道]
+    DEV["车载设备"]
+    RADIO["电台通道"]
 
-    PM -. 二期 .-> API_VER
-    LOG --> SYNC -. 有网时 .-> API_LOG --> AGG
-    AUTH -. 二期 .-> API_AUTH
-    SYNC -. 二期 .-> API_APK
+    AUTH --> A1
+    PM --> A2
+    LOG --> A3 --> AGG --> ADM
+    DB <--> A4
+    RC --> A5
+    UI2 --> A6
     UE & TB -- SSH/SFTP --> DEV
-    DEV -- GPS/告警 --> RADIO --> Admin
+    DEV -- GPS/告警 --> RADIO --> ADM
+    UI1 --> UE & PM & LOG
+    UI2 --> TB & AUTH & DB
 ```
 
-**一期为二期预留的设计点**
+### 10.4 二期端到端流程
+
+```mermaid
+flowchart TD
+    A([打开 App]) --> B{有互联网?}
+    B -- 是 --> C[登录 / 刷新 token]
+    C --> D[同步: 版本清单 · 设备台账 · 远程配置 · 待上传日志]
+    B -- 否 --> E[离线模式: 使用本地缓存]
+    D & E --> F[Devices 页: 列表显示车号来自台账]
+    F --> G[连接设备 → 读取身份 → 版本总览<br/>Cloud 列来自 admin 版本库]
+    G --> H{适用范围检查<br/>灰度规则}
+    H -- 不适用 --> H1[提示该版本不适用于此车辆] --> F
+    H -- 适用 --> I[一期升级流程 S0–S10]
+    I --> J[会话写入同步队列 PENDING]
+    G --> K[Toolbox: 拉日志 / 下发配置 / 诊断命令]
+    K --> J
+    J --> L{有互联网?}
+    L -- 是 --> M[自动上传 → SYNCED]
+    L -- 否 --> N[保留, 下次有网自动上传]
+    M --> O[admin 聚合: 设备版本台账 / 未升级清单]
+```
+
+### 10.5 二期界面变化
+
+| 位置 | 变化 |
+|---|---|
+| 底部 Tab | 新增第 5 个 Tab **Cloud**（登录状态、版本库、同步状态、工具箱入口）；一期 4 个 Tab 不变 |
+| Devices 列表 | 车号来自 admin 台账（离线用设备簿缓存）；新增"Not on latest"筛选（数据来自台账 + 日志聚合）；支持从 admin 任务领取的车辆清单高亮（P2-10） |
+| Device Details | Versions 卡片的 Cloud 列显示 admin 版本库的 latest，并显示"适用 / 不适用"标记；新增 **Toolbox** 区块（Pull Device Logs / Push Config / Diagnostics） |
+| Packages | 顶部"Cloud Versions"列表替换为 admin 版本库（含灰度标签、适用型号）；URL 下载与本地文件入口保留为兜底 |
+| Logs | 同步状态与"Upload to Cloud"由自动同步接管；新增"Synced to admin at …"；工具箱操作也作为会话出现在列表（type 字段区分 UPGRADE / TOOLBOX） |
+| Settings | 新增 Account（登录 / 退出）、Server（admin 地址）、Auto sync 开关；设备参数改为"来自远程配置（可本地覆盖）" |
+| 新页面 | Cloud 首页；版本详情；工具箱操作页（复用升级进行中页的步骤时间线）；任务列表（P2-10） |
+
+原型中的 `ui-14-cloud-phase2.png` 为 Cloud Tab 的预览，仅用于对齐方向，二期启动时再细化。
+
+### 10.6 admin 接口草案
+
+| 接口 | 方法 | 说明 | 关键字段 |
+|---|---|---|---|
+| `/api/app/auth/login` | POST | 登录 | username, password → accessToken, refreshToken, role, operatorName |
+| `/api/app/auth/refresh` | POST | 刷新 token | refreshToken |
+| `/api/app/versions` | GET | 版本清单（与 6.2.4 `versions.json` 同结构，增加 `applicableTo` 范围规则） | ETag 缓存 |
+| `/api/app/versions/{version}/download` | GET | 程序包下载 | 支持 Range；返回 sha256 头 |
+| `/api/app/devices` | GET | 设备台账（增量：`since` 时间戳） | ssid, bssid, vehicleNo, deviceId, model, currentVersion(聚合), lastSeenAt |
+| `/api/app/devices/{deviceId}/qrcode` | GET | 二维码内容 / 图片（F1-11 格式） | — |
+| `/api/app/logs/sessions` | POST | 上传升级 / 工具箱会话（幂等：`Idempotency-Key: sessionId`） | UpgradeSession JSON（6.5.1） |
+| `/api/app/logs/app` | POST | 上传 App 操作日志文件（可选，按天） | multipart |
+| `/api/app/config` | GET | 远程配置（6.6 配置项 JSON） | version 号，App 本地可覆盖 |
+| `/api/app/apk/latest` | GET | 最新 APK 版本与下载地址 | versionCode, url, sha256, notes, force |
+| `/api/app/tasks` | GET / POST | 升级任务领取与进度回传（P2-10） | taskId, version, vehicles[], progress |
+
+admin 侧聚合口径：以 `deviceId`（无则 `ssid`）为键，取最近一条 `result=SUCCESS` 会话的 `versionAfter` 作为"当前版本"；与版本库 `latest` 比较得到"未升级清单"；同时可结合电台通道上报的版本字段（如有）做交叉校验。
+
+### 10.7 一期为二期预留的设计点
 
 | 预留点 | 一期做法 |
 |---|---|
-| 程序包来源 | `Package.source` 枚举已包含 `ADMIN`；`PackageRepository` 定义 `RemoteSource` 接口，一期仅实现 `UrlSource` |
-| 日志结构 | `UpgradeSession` 已包含 `sessionId`、`ssid`、`operator`、`appVersion` 等同步所需字段；增加 `syncStatus`（一期恒为 `LOCAL`）与 `syncedAt` |
-| 设备标识 | 以 SSID 为主键；预留 `deviceId` 字段（二期由 admin 台账映射） |
-| 网络层 | 抽象 `AdminApi` 接口（一期无实现）；配置项预留 `admin_base_url` |
-| 升级引擎 | Step 插件化，二期维护操作（拉日志 / 推配置）复用同一引擎与日志格式 |
-| 设备探测 | S1 预检结果（系统信息、磁盘、版本）也写入会话，二期可上报作为设备画像 |
+| 程序包来源 | `Package.source` 枚举含 `ADMIN`；`RemoteSource` 接口一期实现 `UrlSource` 与 `ManifestSource`（versions.json），二期加 `AdminSource` |
+| 版本清单格式 | 一期 `versions.json` 即二期 `/api/app/versions` 响应体，字段保持兼容 |
+| 日志结构 | `UpgradeSession` 已含 `sessionId` / `ssid` / `vehicleNo` / `deviceId` / `operator` / `appVersion` / `syncStatus` / `syncedAt`；上传协议一期与二期一致（6.5.3） |
+| 设备标识 | 设备簿以 SSID 为主键，字段含 `deviceId` / `vehicleNo` / `bssid`，二期直接被台账同步覆盖 |
+| 网络层 | `AdminApi` 接口一期只有 `ManifestApi` / `LogUploadApi` 两个实现；`admin_base_url` 配置项预留 |
+| 升级引擎 | `UpgradeStep` 插件化；工具箱操作 = 新的 Step 序列，复用执行、日志、中断对账框架 |
+| 会话类型 | `UpgradeSession.type` 一期恒为 `UPGRADE`，二期加 `TOOLBOX_PULL_LOGS` / `TOOLBOX_PUSH_CONFIG` / `TOOLBOX_COMMAND` |
+| 身份编辑 | `identity_editable` 开关与 F8-06 流程一期已设计，二期决定是否开放 |
+| 界面 | 底部 Tab 容器预留第 5 个位置；Device Details 页面为可扩展的卡片列表，工具箱区块直接追加 |
+| 配置 | 设置项 JSON schema 版本化，远程配置下发时按 schema 合并 |
 
-### 10.4 二期待定问题
+### 10.8 二期待定问题
 
-- admin 侧 SSID 与车辆 / 设备 ID 的映射由谁维护；
-- 日志同步的冲突策略（同一会话重复上传幂等）；
-- 版本库是否需要"灰度 / 指定车辆可升级版本"控制；
-- 维护工具箱的操作是否需要 admin 侧权限控制。
+- admin 侧 SSID / 设备 ID 与车辆的映射由谁维护、如何初始化（导入现有台账 / 现场扫码登记）；
+- 日志同步是否需要传设备控制台原文（L2）还是仅结构化摘要（体积与隐私权衡）；
+- 灰度规则粒度（车队 / 车型 / 指定车号）；
+- 工具箱自定义命令是否允许、由哪个角色执行、是否需要 admin 审计；
+- 是否需要多语言与多租户（多个矿区）；
+- App 登录是否接入现有 admin 的账号体系（SSO / 独立账号）。
 
 ---
 
@@ -744,6 +1026,11 @@ flowchart LR
 | AC-10 | 日志 | 上述每次操作均有完整会话日志；导出 zip 可用微信 / 飞书分享，内容含每步命令输出且密码脱敏 |
 | AC-11 | 配置 | 修改 IP / 命令后"测试连接"结果随之变化；导出 JSON 在另一台手机导入后行为一致 |
 | AC-12 | 语言 | 全部界面、通知栏、错误提示与导出日志均为英文，无中文残留；`strings.xml` 中无未使用 / 硬编码字符串（lint 通过） |
+| AC-13 | 设备身份 | 连接后 3 s 内显示车号 / 设备 ID / SSID；断开重连后列表仍显示车号（设备簿缓存）；配置文件缺失时显示不可用且升级不受影响 |
+| AC-14 | 版本总览 | 配置版本清单后，设备详情页正确显示 Cloud / On Phone / On Device 三个版本并给出正确结论（覆盖 6.9 表中 5 种情况） |
+| AC-15 | 扫码连接 | 扫描按 F1-11 格式生成的二维码可直接连接隐藏 SSID 的设备 |
+| AC-16 | 中断对账 | 在 S6–S8 阶段强制断开 Wi-Fi 使设备自行完成启动，重连后 App 判定为 Success (Reconciled) 而非失败；在 S2 阶段断开则判定为未改动可重试 |
+| AC-17 | 日志上传 | 配置接收端后，点击 Upload 将 PENDING 会话上传并标 SYNCED；重复上传不产生重复记录；断网时标 FAILED 并在恢复后自动重试 |
 
 ---
 
@@ -763,3 +1050,33 @@ flowchart LR
 | Q10 | 程序是否有开机自启（影响回滚与断电风险评估） | 回滚策略 |
 | Q11 | 是否允许 App 在设备上写入备份目录（磁盘空间） | `backup_dir` / `backup_keep` |
 | Q12 | 是否需要在升级前检查车辆状态（如车辆行驶中禁止升级） | 是否增加前置确认 |
+| Q13 | 设备身份配置文件的路径、格式、字段名（车号 / 设备 ID / SSID 分别叫什么） | `identity_file` / `identity_map` 默认值 |
+| Q14 | **是否允许在 App 内编辑车号 / 设备 ID / SSID**；若允许，修改 SSID 后设备如何生效（重启 Wi-Fi 服务命令） | F8-06 是否进入一期 |
+| Q15 | 一期版本清单 `versions.json` 与程序包放在哪里（对象存储 / 内网 Nginx），由谁维护 | `version_manifest_url` |
+| Q16 | 一期日志上传接收端是否需要（可先只做导出），若需要由谁提供 | F5-08 是否进入一期 |
+| Q17 | 设备是否有 watchdog / 开机自启会在升级中途自动拉起程序（影响 S4 停止逻辑与对账判定） | `cmd_stop` 需同时停 watchdog |
+| Q18 | 现场员工手机型号 / Android 版本调研结果 | 最低支持版本 |
+
+---
+
+## 附录 A. 评审意见处理记录（2026-09-30，评审人：宋家强）
+
+| # | 评审意见 | 处理 | 落点 |
+|---|---|---|---|
+| 1 | 需要少量后端服务：最新版本信息、安装包列表、下载地址 | 一期采用静态 `versions.json` + 程序包下载地址，无需开发接口；二期由 admin 版本库生成同格式 | 2.2、6.2.4、F2-09/10、10.2 P2-02 |
+| 2 | 多台设备混在一起只能看到 Wi-Fi 名，分不清哪台，数量多时不好排查哪台没升级 | 连接后读取设备配置文件得到车号 / 设备 ID 并缓存为设备簿，列表显示车号；新增"未升级"筛选；二期由 admin 台账 + 日志聚合给出未升级清单 | 6.8、F1-03、F1-12、10.2 P2-04/05 |
+| 3 | 支持隐藏 Wi-Fi 需要 MAC 地址，可做二维码贴在设备上扫码读取 | 新增扫码连接，二维码含 SSID / BSSID / 车号 / 设备 ID；二期 admin 生成二维码 | F1-11、10.6 |
+| 4 | 日志分为 App 操作日志（含 App-服务器、App-设备交互）与 SSH 控制台日志两部分 | 日志分层为 L1 操作日志 + L2 设备控制台日志，升级会话把两者串起来；导出与上传格式据此调整 | 6.5.0 |
+| 5 | 手机被打断失去连接，设备可能已升级成功但 App 不知道，重连后显示失败吗？ | 新增设备端升级标记文件 + 重连后状态对账流程，能判定"其实已成功"；状态机新增 Interrupted / Reconciling | 6.3.2、6.3.3、F3-09、E11/E12/E16 |
+| 6 | 升级前是否做版本检查，提示已是最新 / 与设备一致是否继续 | 升级前版本比对改为必做，5 种情况分别提示；新增版本总览卡片 | 6.3.1、6.9 |
+| 7 | 确认最低 Android 版本，现场调研员工手机 | 建议 Android 10+（Specifier API 要求），最终以调研结果为准 | 第 8 章、Q18 |
+| 8 | Wi-Fi 抢断：部分 Android 会断开无互联网 Wi-Fi 自动连其他，流程上要求其他 Wi-Fi 不自动连接 | 技术上用 Specifier 绑定 + onLost 自动重连；流程上首次引导与手册要求关闭其他 Wi-Fi 自动连接与智能切换；设置页提供检查入口 | F1-13、E12 |
+
+业务方问题处理：
+
+| # | 问题 | 处理 | 落点 |
+|---|---|---|---|
+| B1 | 连上后读取 PDS 配置文件，显示车号、ID、SSID | 设备身份识别功能 | 6.8 |
+| B2 | 是否需要编辑车号 / ID / SSID（待确认） | 设计为可配置开关的 P2 功能，附建议（只读或仅车号可改），等待业务确认 | F8-06、Q14、10.2 P2-06 |
+| B3 | 一个界面清晰显示云上版本 / 手机版本 / 已连接 PDS 版本 | 设备详情页 Versions 卡片（Cloud / On Phone / On Device）+ 状态结论 | 6.9 |
+| B4 | 日志如何上传到云上 | 一期：可配置 HTTPS 接收端 + 同步队列 + 幂等上传；二期：admin 正式接口 + 自动同步 + 聚合 | F5-08、6.5.3、10.2 P2-04、10.6 |
